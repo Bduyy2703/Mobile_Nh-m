@@ -56,6 +56,7 @@ const SignInScreen = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
       alert("Login success");
+      router.push(`/home?email=${encodeURIComponent(data.email)}`);
       console.log(data);
       reset(); // Clear form after successful submission
     } catch (error) {

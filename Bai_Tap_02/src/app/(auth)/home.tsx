@@ -9,8 +9,8 @@ const HomeScreen = () => {
   return (
     <SafeAreaView>
       <View className="flex items-center justify-center h-screen">
-        <Text className="text-2xl font-bold">Trang Chủ</Text>
-        <Text className="text-lg mt-2">Chào mừng, {email}!</Text>
+        <Text className="text-2xl font-bold">Home</Text>
+        <Text className="text-lg mt-2">Welcome, {email}!</Text>
       </View>
     </SafeAreaView>
   );

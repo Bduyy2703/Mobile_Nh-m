@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_pethotel
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: duy123
+      MYSQL_DATABASE: pethotel
+      MYSQL_USER: pethotel_user
+      MYSQL_PASSWORD: pethotel_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - pethotel_network
+
+  spring_app:
+    build: .
+    container_name: pethotel_app
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pethotel?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pethotel_user
+      SPRING_DATASOURCE_PASSWORD: pethotel_pass
+    ports:
+      - "8081:8080"
+    networks:
+      - pethotel_network
+
+volumes:
+  mysql_data:
+
+networks:
+  pethotel_network:

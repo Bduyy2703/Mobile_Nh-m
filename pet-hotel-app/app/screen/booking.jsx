@@ -69,22 +69,36 @@ const Booking = () => {
   const [signs, setSigns] = useState([]);
 
   const [userId, setUserId] = useState(null);
-  const fetchUserId = async () => {
-    try {
-      userIdT = await AsyncStorage.getItem('userId');
-      if (userIdT) {
-        setUserId(Number(userIdT));
-        console.log('Retrieved userId:', userId);
-      } else {
-        console.log('No userId found in AsyncStorage');
-      }
-    } catch (error) {
-      console.error('Error retrieving userId from AsyncStorage:', error);
-    }
-  };
+  // const fetchUserId = async () => {
+  //   try {
+  //     userIdT = await AsyncStorage.getItem('userId');
+  //     if (userIdT) {
+  //       setUserId(Number(userIdT));
+  //       console.log('Retrieved userId:', userId);
+  //     } else {
+  //       console.log('No userId found in AsyncStorage');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error retrieving userId from AsyncStorage:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchUserId();
+  // }, []);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const userIdcc = await AsyncStorage.getItem("userId");
+      // const tokencc = await AsyncStorage.getItem('token');
+      setUserId(userIdcc);
+      // setToken(tokencc);
+    };
+
+    fetchUserId();
+  }, []);
 
 
-  const shopId = AsyncStorage.getItem("shopId");
 
   const [selectType, setSelectType] = useState();
 
@@ -99,7 +113,6 @@ const Booking = () => {
 
 
   const handleSelectServices = (item) => {
-    const price = item.price || 0;
 
     if (selectedServices.includes(item.id)) {
       setSelectedServices((prevSelected) =>
@@ -108,8 +121,8 @@ const Booking = () => {
       // setTotalPrice(totalPrice - price);
     } else {
       setSelectedServices((prevSelected) => [...prevSelected, item.id]);
-      console.log(selectedServices);
-      console.log(totalPrice);
+      // console.log(selectedServices);
+      // console.log(totalPrice);
       // setTotalPrice(totalPrice + price);
     }
   };
@@ -126,10 +139,10 @@ const Booking = () => {
     try {
       const response = await API.get(`/services/shops/${id}`);
       // const response = await API.get(`/services/shops/${shopId}`);
-      if (response.data) {
+      if (response.status===200) {
         setServiceList(response.data.content);
       }
-      console.log("Services:", response.data.content);
+      // console.log("Services:", response.data.content);
     } catch (error) {
       console.error("Error fetching services booking:", error);
     }
@@ -137,13 +150,13 @@ const Booking = () => {
 
   const fetchPets = async () => {
     try {
-      console.log(userId);
-      console.log(userId);
+      // console.log(userId);
+      // console.log(userId);
       const response = await API.get(`/pets/users/${userId}`);
-      if (response.data) {
+      if (response.status===200) {
         setPetList(response.data.content);
       }
-      console.log("Pets:", response.data.content);
+      // console.log("Pets:", response.data.content);
     } catch (error) {
       console.error("Error fetching pets booking:", error);
     }
@@ -155,10 +168,10 @@ const Booking = () => {
       // const response = await API.get(`/rooms/available/shops/${shopId}`);
       // const response = await API.get(`/rooms/available/shops/1`);
       const response = await API.get(`rooms/available/shops/random-room-by-sign?sign=${selectType}`);
-      if (response.data) {
+      if (response.status===200) {
         setRooms(response.data);
       }
-      console.log("Rooms:", response.data);
+      // console.log("Rooms:", response.data);
     } catch (error) {
       console.error("Error fetching Rooms booking:", error);
     }
@@ -169,7 +182,7 @@ const Booking = () => {
     try {
       // const response = await API.get(`/rooms/available/shops/${shopId}`);
       const response = await API.get(`/rooms/available/shops/${id}`);
-      if (response.data) {
+      if (response.status===200) {
         setSigns(response.data);
       }
       console.log("Signs:", response.data);
@@ -179,15 +192,13 @@ const Booking = () => {
   };
 
 
-  useEffect(() => {
-    fetchUserId();
-  }, []);
+
 
   useEffect(() => {
     const fetchData = async () => {
       if (userId !== null) {
         await fetchServices();
-        await fetchPets();
+         await fetchPets();
         // await fetchRooms();
         await fetchSign();
       }
@@ -258,7 +269,11 @@ const Booking = () => {
     };
     console.log(bookingData);
     AsyncStorage.setItem('booking', JSON.stringify(bookingData));
-    router.push('/screen/confirmBooking')
+    // router.push('/screen/confirmBooking');
+    router.push({
+      pathname: '/screen/confirmBooking',
+      params: { id: id },
+    });
 
   }
 
@@ -428,7 +443,7 @@ const Booking = () => {
                 items={simpleSignList}
                 value={selectType}
                 style={pickerSelectStyles}
-                placeholder={{ label: "VIP", value: null }}
+                placeholder={{ label: "Room type", value: null }}
                 useNativeAndroidPickerStyle={false}
               />
             </View>
@@ -474,7 +489,7 @@ const Booking = () => {
 
 
         <View style={commonStyles.mainButtonContainer}>
-          <TouchableOpacity onPress={handleBooking} style={commonStyles.mainButton}>
+          <TouchableOpacity onPress={() => handleBooking()} style={commonStyles.mainButton}>
             <Text style={commonStyles.textMainButton}>Xác nhận đặt phòng</Text>
           </TouchableOpacity>
         </View>
@@ -518,6 +533,7 @@ const pickerSelectStyles = {
 
 const styles = StyleSheet.create({
   dayContainer: {
+    width: 85,
     padding: 10,
     marginRight: 10,
     alignItems: 'center',
@@ -713,7 +729,7 @@ const styles = StyleSheet.create({
   },
   modalText: {
     marginBottom: 15,
-    fontSize:18,
+    fontSize: 18,
     textAlign: 'center',
   },
   buttonClose: {
@@ -723,7 +739,7 @@ const styles = StyleSheet.create({
   },
   textClose: {
     color: 'white',
-    fontSize:16
+    fontSize: 16
   },
 
 });

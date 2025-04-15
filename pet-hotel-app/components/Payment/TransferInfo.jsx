@@ -22,7 +22,7 @@ import { useRouter } from "expo-router";
 import API from "../../config/AXIOS_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const socket = SocketIOClient("http://192.168.100.10:8080");
+// const socket = SocketIOClient("http://192.168.100.10:8080");
 
 const TransferInfo = ({
   accountName,

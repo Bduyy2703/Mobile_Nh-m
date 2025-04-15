@@ -1,6 +1,5 @@
 import { View, Text, Image, Pressable } from 'react-native'
 import React, { useCallback } from 'react'
-import { useOAuth } from '@clerk/clerk-expo'
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { router } from 'expo-router'
@@ -28,22 +27,8 @@ export default function LoginScreen() {
     router.push('screen/login');
   }
 
-  useWarmUpBrowser();
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
 
-  const onPress = useCallback(async () => {
-    try {
-      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/(tabs)/home', { scheme: 'myapp' }),
-      })
-
-      if (createdSessionId) {
-      } else {
-      }
-    } catch (err) {
-      console.error('OAuth error', err)
-    }
-  }, [])
+  
 
   return (
     <SafeAreaView style={

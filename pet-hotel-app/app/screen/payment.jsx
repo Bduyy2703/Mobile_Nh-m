@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ScrollView,
   Text,
@@ -14,7 +14,7 @@ import { commonStyles } from "../../style";
 
 const Payment = () => {
   const router = useRouter();
-  const { accountName, accountNumber, amount, bin, description, qrCode, orderCode, paymentLinkId } = useLocalSearchParams();
+  const { accountName, accountNumber, amount, bin, description, qrCode, orderCode, paymentLinkId, type } = useLocalSearchParams();
 
 
   return (
@@ -32,6 +32,7 @@ const Payment = () => {
               qrCode={qrCode}
               orderCode={orderCode}
               paymentLinkId={paymentLinkId}
+              type={type}
             />
           </View>
         </SafeAreaView>

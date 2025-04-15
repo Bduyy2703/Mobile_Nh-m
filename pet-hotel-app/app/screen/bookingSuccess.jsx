@@ -36,8 +36,10 @@ const BookingSuccess = () => {
         fetchBookingData();
     }, []);
 
-    const returnUrl = "http://192.168.100.10:8081/screen/success";
-    const cancelUrl = "http://192.168.100.10:8081/screen/cancel";
+    const returnUrl = "/screen/success";
+    // const returnUrl = "http://192.168.100.10:8081/screen/success";
+    // const cancelUrl = "http://192.168.100.10:8081/screen/cancel";
+    const cancelUrl = "/screen/cancel";
 
     const handlePayment = async () => {
         const token = await AsyncStorage.getItem('token');
@@ -115,7 +117,7 @@ const BookingSuccess = () => {
                         {"Tiến hành thanh toán"}
                     </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={{alignItems:'center'}}>
+                <TouchableOpacity onPress={()=> router.push("/home")} style={{alignItems:'center'}}>
                     <Text style={styles.text6}>
                         {"Trang chủ"}
                     </Text>

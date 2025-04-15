@@ -11,6 +11,8 @@ import moment from 'moment';
 const ConfirmBooking = () => {
     const [bookingData, setBookingData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isPremium, setIsPremium] = useState(false);
+    const { id } = useLocalSearchParams();
 
     const shopId = AsyncStorage.getItem("shopId");
     const token = AsyncStorage.getItem("token");
@@ -19,7 +21,8 @@ const ConfirmBooking = () => {
     const [room, setRoom] = useState([]);
     const [service, setService] = useState([]);
     const [days,setDays]= useState(0);
-
+    const [tax,settTax] = useState(0.1);
+    const [discount,setDiscount] = useState(0);
     const selectedServiceNames = service
         .filter(service => bookingData.serviceIds.includes(service.id))
         .map(service => service.name);
@@ -28,15 +31,26 @@ const ConfirmBooking = () => {
         .filter(service => bookingData.serviceIds.includes(service.id))
         .map(service => service.price);
     const servicePrice = selectedServicePrices.reduce((acc, price) => acc + price, 0);
-
+    
     {/* fetch data */ }
+    useEffect (() => {
+        const fetchPremium = async () => {
+            const premium = await AsyncStorage.getItem('isPremium');
+            console.log("Premium",premium);
+            premium == "true" ? setIsPremium(true): setIsPremium(false);
+            
+        }
+        fetchPremium();
+    },[])
 
     const fetchBookingData = async () => {
         try {
             const storedData = await AsyncStorage.getItem('booking');
-            console.log("Stored Data:", storedData);
 
             if (storedData) {
+                (isPremium==true) ? settTax(0.05) : settTax(0.1);
+            (isPremium==true) ? setDiscount(0.1) : setDiscount(0);
+
                 const parsedData = JSON.parse(storedData);
                 setBookingData(parsedData);
                 const startDate = moment(parsedData.startDate);
@@ -72,7 +86,7 @@ const ConfirmBooking = () => {
     };
     const fetchServices = async () => {
         try {
-            const response = await API.get(`/services/shops/1`);
+            const response = await API.get(`/services/shops/${id}`);
             if (response.data) {
                 setService(response.data.content);
             }
@@ -238,18 +252,30 @@ const ConfirmBooking = () => {
                 </View>
                 <View style={styles.row9}>
                     <Text style={styles.text8}>
-                        {"Thuế dịch vụ"}
+                        {"Phí dịch vụ"}
                     </Text>
                     <Text style={styles.text9}>
-                        {loading ? "..." : (bookingData ? (bookingData.totalPrices* days + servicePrice) * 0.05 : "Chưa có dữ liệu đặt phòng")}
+                        {loading ? "..." : (bookingData ? ((bookingData.totalPrices * days + servicePrice) * (isPremium ? 0.05 : 0.1))  : "Chưa có dữ liệu đặt phòng")}
                     </Text>
                 </View>
+                {/* {isPremium == true && (
+                    <View style={styles.row9}>
+                    <Text style={styles.text8}>
+                        {"Giảm giá Premium"}
+                    </Text>
+                    <Text style={styles.text9}>
+                        {loading ? "..." : (bookingData ? ((((bookingData.totalPrices * days + servicePrice) * (isPremium ? 0.05 : 0.1)) + (bookingData.totalPrices * days + servicePrice)) * ((isPremium ? 0.1 : 0)))  : "Chưa có dữ liệu đặt phòng")}
+                    </Text>
+                </View>
+                )} */}
+                
                 <View style={styles.row10}>
                     <Text style={styles.text8}>
                         {"Tổng tiền"}
                     </Text>
                     <Text style={styles.text9}>
-                        {loading ? "..." : (bookingData ? (bookingData.totalPrices* days + servicePrice) * 0.05 + (bookingData.totalPrices* days + servicePrice): "Chưa có dữ liệu đặt phòng")}
+                        {loading ? "..." : (bookingData ? (((bookingData.totalPrices * days + servicePrice) * (isPremium ? 0.05 : 0.1)) + (bookingData.totalPrices * days + servicePrice)) : "Chưa có dữ liệu đặt phòng")}
+                        {/* - ((((bookingData.totalPrices * days + servicePrice) * (isPremium ? 0.05 : 0.1)) + (bookingData.totalPrices * days + servicePrice)) * ((isPremium ? 0.1 : 0))) */}
                     </Text>
                 </View>
                 <View style={styles.box4}>

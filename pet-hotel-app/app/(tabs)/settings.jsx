@@ -64,15 +64,15 @@ const SettingsScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>{t('other')}</Text>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity style={styles.item} onPress={()=> router.push('/screen/premium')}>
           {/* <View style={styles.iconContainer}>
             <Text>💳</Text>
           </View> */}
-          <Text style={styles.itemText}>{t('paymentMethod')}</Text>
+          <Text style={styles.itemText}>{t('upgradeAccount')}</Text>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity onPress={()=> router.push('/schedule')} style={styles.item}>
           {/* <View style={styles.iconContainer}>
             <Text>⏳</Text>
           </View> */}
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
-    color: '#4EA0B7',
+    // color: '#4EA0B7',
   },
   arrow: {
     fontSize: 18,

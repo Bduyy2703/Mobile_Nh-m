@@ -7,110 +7,182 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header/header";
 import { commonStyles } from "../../style";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter , useLocalSearchParams  } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import ChatIcon from "./../../assets/images/chat.png";
 import CallIcon from "./../../assets/images/call.png";
 import API from "../../config/AXIOS_API";
+import { addDoc, collection } from "firebase/firestore";
+import { database } from "../../config/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Details = () => {
+  const navigation = useNavigation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  console.log("shop",id);
-  const [shopData, setShopData] = useState({
-    name: "",
-    address: "",
-    description: "",
-  });
+  const [userId, setUserId] = useState(null); 
+  const [fullName, setFullName] = useState(null);
+  const [shopData, setShopData] = useState({});
   const [serviceData, setServiceData] = useState([]);
-  // const id = 1;
+  const [loading, setLoading] = useState(true);
 
-  const fetchShopData = async () => {
-    try {
-      const response = await API.get(`/shops/${id}`);
-      setShopData(response.data);
-      console.log("Shop data:", response.data);
-    } catch (error) {
-      console.error("Error fetching shop data:", error);
-    }
-  };
-
-  const fetchService = async () => {
-    try {
-      const response = await API.get(`/services/shops/${id}`);
-      setServiceData(response.data.content);
-      console.log("Service data:", response.data.content);
-    } catch (error) {
-      console.error("Error fetching service data:", error);
-    }
-  };
   useEffect(() => {
-    fetchShopData();
-    fetchService();
-  }, []);
+    const fetchUserData = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const name = await AsyncStorage.getItem('fullName');
+        setUserId(storedUserId);
+        setFullName(name);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+
+  }, [id]);
+
+
+
+
+  useEffect(() => {
+    const fetchShopData = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get(`/shops/${id}`);
+        if (response.status === 200) {
+          setShopData(response.data);
+          console.log("Shop data:", response.data);
+        }
+        setLoading(false);
+
+      } catch (error) {
+        console.error("Error fetching shop data:", error);
+      }
+    };
+    if (id) {
+      fetchShopData();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const fetchService = async () => {
+      try {
+        setLoading(true);
+        const response = await API.get(`/services/shops/${id}`);
+        if (response.status === 200) {
+          setServiceData(response.data.content);
+          console.log("Service data:", response.data.content);
+        }
+        setLoading(false);
+
+      } catch (error) {
+        console.error("Error fetching service data:", error);
+      }
+    };
+    if (id) {
+      fetchService();
+    }
+  }, [id])
 
   const handleBooking = () => {
-    // router.push("/screen/booking");
     router.push({
       pathname: '/screen/booking',
       params: { id: id },
     });
   };
 
+  const sendMessage = async () => {
+    const newMessage = {
+      text: "Hello",
+      createdAt: new Date(),
+      sender: userId,
+      user: {
+        _id: userId,
+        name: fullName,
+        avatar: 'https://i.pravatar.cc/300'
+      },
+      receiver: shopData.userId.toString(),
+      _id: Math.random().toString(36),
+    };
+    // setInputText('');
+
+    await addDoc(collection(database, 'chats'), newMessage);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <ImageBackground
-          source={{ uri: "https://i.imgur.com/1tMFzp8.png" }}
-          resizeMode={"stretch"}
-          imageStyle={styles.column2}
-          style={styles.column}
-        >
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={() => {
-                router.back();
+      {loading == true ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <>
+          <ScrollView style={styles.scrollView}>
+            <ImageBackground
+              source={{
+                uri: 
+                shopData && shopData.imageFiles && shopData.imageFiles?.length > 0
+                  ? shopData?.imageFiles
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].url
+                  : 
+                "https://i.imgur.com/1tMFzp8.png"
               }}
-            >
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </ImageBackground>
-        <View style={styles.shopName}>
-          <View style={styles.column3}>
-            <Text style={styles.text2}>
-              {shopData.name} {/* call name */}
-            </Text>
-            <View style={styles.row5}>
-              <Text style={styles.text3}>
-                {shopData.address} {/* call address */}
-              </Text>
-            </View>
-          </View>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              backgroundColor: "#4EA0B7",
-              borderRadius: 20,
-              width: 35,
-              height: 35,
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={ChatIcon}
               resizeMode={"stretch"}
-              style={styles.image8}
-            />
-          </View>
+              imageStyle={styles.column2}
+              style={styles.column}
+            >
+              <View style={styles.row}>
+                <TouchableOpacity
+                  onPress={() => {
+                    router.back();
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            </ImageBackground>
+            <View style={styles.shopName}>
+              <View style={styles.column3}>
+                <Text style={styles.text2}>
+                  {shopData.name} {/* call name */}
+                </Text>
+                <View style={styles.row5}>
+                  <Text style={styles.text3}>
+                    {shopData.address} {/* call address */}
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  backgroundColor: "#4EA0B7",
+                  borderRadius: 20,
+                  width: 35,
+                  height: 35,
+                  alignItems: "center",
+                }}
+              >
+                <TouchableOpacity onPress={async () => {
+                  await sendMessage();
+                  //  router.push('/screen/chatMessage');
+                  navigation.navigate('(tabs)', { screen: 'chat' })
+                }
+                }>
+                  <Image
+                    source={ChatIcon}
+                    resizeMode={"stretch"}
+                    style={styles.image8}
+                  />
+                </TouchableOpacity>
 
-          <View
+              </View>
+
+              {/* <View
             style={{
               flex: 1,
               flexDirection: "column",
@@ -127,44 +199,47 @@ const Details = () => {
               resizeMode={"stretch"}
               style={styles.image9}
             />
-          </View>
-        </View>
-        <View style={styles.row6}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.text4}>{"4.0"}</Text>
-          </View>
-          <View style={styles.view2}>
-            <Text style={styles.text4}>+200 nhận xét</Text>
-          </View>
-        </View>
-        <Text style={styles.text5}>{"Mô tả"}</Text>
-        <Text style={styles.text6}>
-          {shopData.description} {/* call description */}
-        </Text>
-        <Text style={styles.text7}>{"Các dịch vụ khác"}</Text>
-        {serviceData.length > 0 ? (
-          serviceData.map((service, index) => (
-            <Text key={index} style={styles.text8}>
-              {service.name}{" "}
-              {/* Adjust this property name based on your API response */}
+          </View> */}
+            </View>
+            <View style={styles.row6}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.text4}>{"4.0"}</Text>
+              </View>
+              <View style={styles.view2}>
+                <Text style={styles.text4}>+200 nhận xét</Text>
+              </View>
+            </View>
+            <Text style={styles.text5}>{"Mô tả"}</Text>
+            <Text style={styles.text6}>
+              {shopData.description} {/* call description */}
             </Text>
-          ))
-        ) : (
-          <Text style={styles.text8}>{"No services available"}</Text>
-        )}
-      </ScrollView>
-      <View>
-        <View style={styles.row7}>
-          <View style={styles.column5}>
-            <Text style={styles.text9}>{"Tổng giá"}</Text>
-            <Text style={styles.text10}>{"160.000VND /Ngày"}</Text>
-          </View>
+            <Text style={styles.text7}>{"Các dịch vụ khác"}</Text>
+            {serviceData.length > 0 ? (
+              serviceData.map((service, index) => (
+                <Text key={index} style={styles.text8}>
+                  {service.name}{" "}
+                  {/* Adjust this property name based on your API response */}
+                </Text>
+              ))
+            ) : (
+              <Text style={styles.text8}>{"No services available"}</Text>
+            )}
+          </ScrollView>
+          <View>
+            <View style={styles.row7}>
+              <View style={styles.column5}>
+                <Text style={styles.text9}>{"Tổng giá"}</Text>
+                <Text style={styles.text10}>{"160.000VND /Ngày"}</Text>
+              </View>
 
-          <TouchableOpacity onPress={handleBooking} style={styles.view3}>
-            <Text style={styles.text11}>{"Đặt ngay"}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <TouchableOpacity onPress={handleBooking} style={styles.view3}>
+                <Text style={styles.text11}>{"Đặt ngay"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      )}
+
     </SafeAreaView>
   );
 };

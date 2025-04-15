@@ -1,103 +1,139 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { TabView, SceneMap } from 'react-native-tab-view';
 import { commonStyles } from "../../style";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router'; // Import useFocusEffect
 import DropDownPicker from 'react-native-dropdown-picker';
 import API from '../../config/AXIOS_API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Pet = () => {
     const router = useRouter();
-
+    const [token, setToken] = useState(null);
     const [selectedPet, setSelectedPet] = useState('');
     const [open, setOpen] = useState(false);
     const [pets, setPets] = useState([]);
-
     const petOptions = pets.map(pet => ({
         label: pet.name,
         value: pet.id
     }));
+    const selectedPetInfo = pets.find(pet => pet.id === selectedPet) || {};
 
-    // const petDetails = {
-    //     itachi: {
-    //         name: "Itachi",
-    //         breed: "French Bulldog",
-    //         age: "1y 4m",
-    //         weight: "5.5 kg",
-    //         length: "42 cm",
-    //         color: "Nâu",
-    //         notes: "Itachi là một chú chó Bulldog 3 tuổi, rất thông minh...",
-    //     },
-    //     luna: {
-    //         name: "Luna",
-    //         breed: "Labrador",
-    //         age: "2y 1m",
-    //         weight: "22 kg",
-    //         length: "60 cm",
-    //         color: "Vàng",
-    //         notes: "Luna rất năng động và thân thiện với mọi người...",
-    //     },
-    //     max: {
-    //         name: "Max",
-    //         breed: "Golden Retriever",
-    //         age: "3y 2m",
-    //         weight: "30 kg",
-    //         length: "65 cm",
-    //         color: "Nâu vàng",
-    //         notes: "Max rất trung thành và thích chơi với trẻ nhỏ...",
-    //     },
-    // };
+    // Use optional chaining to safely access properties
+    const petImageUrl = selectedPetInfo.imageFile?.length > 0
+        ? selectedPetInfo.imageFile[0].url
+        : "https://i.imgur.com/1tMFzp8.png"; // Default image
 
-    const selectedPetInfo = pets.find(pet => pet.id === selectedPet);
-
-    console.log(selectedPetInfo);
-
-    const [userId,setUserId] = useState(null);
+    console.log("Pet image URL:", petImageUrl);
+    const [userId, setUserId] = useState(null);
 
     useEffect(() => {
-        const fetchPetData = async () => {
-            try {
-                const userIda = await AsyncStorage.getItem('userId');
-                setUserId(userIda);
-                console.log("ccc");
-                console.log(userId);
-                const response = await API.get(`/pets/users/${userId}`);
-                console.log("Pet dataaaa:", response.data);
-                if (response.status === 200) {
-                    setPets(response.data.content);
-                    if (response.data.length > 0) setSelectedPet(response.data[0].name.toLowerCase());
-                    console.log("Pet data:", response.data);
-                } else {
-                    console.log("No pet data found");
-                }
-            } catch (error) {
-                console.error('Fetch pet data failed:', error);
-            }
+        const fetchUserId = async () => {
+            const userIdcc = await AsyncStorage.getItem("userId");
+            const tokencc = await AsyncStorage.getItem('token');
+            setUserId(userIdcc);
+            setToken(tokencc);
         };
-        fetchPetData();
-    }, [userId]);
 
-    const addPet = () => {
-        router.push('/screen/init_profile');
+        fetchUserId();
+    }, []);
+
+    // Function to fetch pet data
+    const fetchPetData = async () => {
+        try {
+            const response = await API.get(`/pets/users/${userId}`);
+            if (response.status === 200) {
+                const petsData = response.data.content;
+                setPets(petsData);
+                console.log("Fetched pets data:", petsData); // Log the fetched data
+                if (petsData.length > 0) {
+                    setSelectedPet(petsData[0].id); // Set to the first pet's ID
+                }
+            }
+        } catch (error) {
+            console.error('Fetch pet data failed:', error);
+        }
+    };
+
+    // Use useFocusEffect to fetch pet data whenever the screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            if (userId) {
+                fetchPetData();
+            }
+        }, [userId])
+    );
+
+    const handleEdit = () => {
+        if (selectedPetInfo) {
+            router.push({
+                pathname: 'screen/update_pet',
+                params: {
+                    id: selectedPetInfo.id,
+                    name: selectedPetInfo.name,
+                    breed: selectedPetInfo.breed,
+                    color: selectedPetInfo.color,
+                    gender: selectedPetInfo.gender,
+                    petTypeId: selectedPetInfo.petTypeId,
+                    weight: selectedPetInfo.weight,
+                    age: selectedPetInfo.age,
+                    imageFile: selectedPetInfo.imageFile[0].url,
+                }
+            });
+        }
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            "Xác nhận xóa",
+            "Bạn có chắc chắn muốn xóa thú cưng này?",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "Xóa",
+                    onPress: async () => {
+                        try {
+                            const response = await API.delete(`/pets/${selectedPetInfo.id}`, {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            });
+                            if (response.status === 200) {
+                                console.log("deleted");
+                                fetchPetData();
+                                setSelectedPet(pets.length > 1 ? pets[1].id : '');
+                            }
+                        } catch (error) {
+                            console.error('Delete pet failed:', error);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
         <SafeAreaView style={commonStyles.container}>
             <View style={styles.imageContainer}>
                 <Image
-                    source={{ uri: "https://i.imgur.com/1tMFzp8.png" }}
+                    source={{
+                        uri: selectedPetInfo && selectedPetInfo.imageFile && selectedPetInfo.imageFile.length > 0
+                            ? selectedPetInfo.imageFile
+                                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]?.url
+                            : "https://i.imgur.com/1tMFzp8.png" // URL ảnh mặc định
+                    }}
                     resizeMode={'stretch'}
                     style={styles.petImage}
                 />
+
                 <View style={styles.topButton}>
-                <TouchableOpacity onPress={() => { router.back() }} style={styles.backButton}>
-                    <Icon name="arrow-back-outline" size={24} color="#fff" />
-                </TouchableOpacity>
+                    <TouchableOpacity onPress={() => { router.back() }} style={styles.backButton}>
+                        <Icon name="arrow-back-outline" size={24} color="#fff" />
+                    </TouchableOpacity>
                     <View>
                         <DropDownPicker
                             open={open}
@@ -114,44 +150,61 @@ const Pet = () => {
                             arrowIconStyle={{ display: 'none' }}
                         />
                     </View>
-                    <TouchableOpacity style={styles.plusButton}>
+                    <TouchableOpacity onPress={() => router.push("/screen/init_profile")} style={styles.plusButton}>
                         <Icon name="add-outline" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
             </View>
             <View style={styles.petInfoContainer}>
-
-                    <Text style={styles.petName}>{selectedPetInfo? selectedPetInfo.name : 'NA'}  </Text>
-                    <Text style={styles.petDetails}>{`${selectedPetInfo? selectedPetInfo.breed :'NA'}`}</Text>
-
-
-                    <View style={styles.infoCardsContainer}>
-                        <View style={styles.infoCard}>
-                            <Text style={styles.infoCardLabel}>Cân Nặng</Text>
-                            <Text style={styles.infoCardValue}>{selectedPetInfo? selectedPetInfo.weight +' Kg': 'NA'}</Text>
-                        </View>
-                        <View style={styles.infoCard}>
-                            <Text style={styles.infoCardLabel}>Tuổi</Text>
-                            <Text style={styles.infoCardValue}>{selectedPetInfo? selectedPetInfo.age:'NA'}</Text>
-                        </View>
-                        <View style={styles.infoCard}>
-                            <Text style={styles.infoCardLabel}>Màu Sắc</Text>
-                            <Text style={styles.infoCardValue}>{selectedPetInfo? selectedPetInfo.color:'NA'}</Text>
-                        </View>
+                <View style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}>
+                    <View style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start'
+                    }}>
+                        <Text style={styles.petName}>{selectedPetInfo ? selectedPetInfo.name : 'NA'}</Text>
+                        <Text style={styles.petDetails}>{`${selectedPetInfo ? selectedPetInfo.breed : 'NA'}`}</Text>
                     </View>
-                    {/* <View>
-                        <Text style={{ fontSize: 18, marginLeft: 20, marginTop: 20, color: '#000' }}>
-                            Ghi chú về thú cưng
-                        </Text>
-                        <Text style={{ padding: 15, fontSize: 16, color: '#888' }}>
-                            {selectedPetInfo?selectedPetInfo.notes:'NA'}
-                        </Text>
-                    </View> */}
+
+                    <View style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center'
+                    }}>
+                        <TouchableOpacity onPress={handleEdit} style={{ marginLeft: 10 }}>
+                            <Icon name="pencil" size={24} color="#000" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={handleDelete} style={{ marginLeft: 10 }}>
+                            <Icon name="trash" size={24} color="#000" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                <View style={styles.infoCardsContainer}>
+                    <View style={styles.infoCard}>
+                        <Text style={styles.infoCardLabel}>Cân Nặng</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.weight + ' Kg' : 'NA'}</Text>
+                    </View>
+                    <View style={styles.infoCard}>
+                        <Text style={styles.infoCardLabel}>Tuổi</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.age : 'NA'}</Text>
+                    </View>
+                    <View style={styles.infoCard}>
+                        <Text style={styles.infoCardLabel}>Màu Sắc</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.color : 'NA'}</Text>
+                    </View>
+                </View>
+            </View>
         </SafeAreaView>
     );
 };
-
 
 const styles = StyleSheet.create({
     imageContainer: {
@@ -205,7 +258,7 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         color: 'white',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         borderWidth: 1,
         borderRadius: 10, justifyContent: 'center',
         paddingVertical: 5,
@@ -235,7 +288,8 @@ const styles = StyleSheet.create({
         borderRadius: 20
     },
     petInfoContainer: {
-        height:'100%',
+
+        height: '100%',
         backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,

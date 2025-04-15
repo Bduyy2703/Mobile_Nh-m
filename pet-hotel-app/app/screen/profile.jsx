@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { commonStyles } from '../../style';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { launchImageLibrary } from 'react-native-image-picker';
 import Header from './../../components/Header/header'
 import i18n from '../../i18n';
 import { useTranslation } from 'react-i18next';
@@ -22,15 +21,29 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [premium, setPremium] = useState('');
   const [userInfo, setUserInfor] = useState();
   const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const userIdcc = await AsyncStorage.getItem("userId");
+      const tokencc = await AsyncStorage.getItem('token');
+      setUserId(userIdcc);
+      setToken(tokencc);
+    };
+
+    fetchUserId();
+  }, []);
+
+
   const handleUpdate = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
       let updateData = {
         username: userInfo.username,
         email: email,
@@ -59,55 +72,41 @@ const ProfileScreen = () => {
     // router.push('/');
   };
 
-  useEffect(() => {
-    const fetchUserId = async () => {
-      const userIdcc = await AsyncStorage.getItem("userId");
-      setUserId(userIdcc);
-    };
 
-    fetchUserId();
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (userId) {
-        try {
-          const response = await API.get(`users/${userId}`);
-          console.log(response.data);
-          setUserInfor(response.data);
-          setFullName(response.data.fullName);
-          setAddress(response.data.address);
-          setEmail(response.data.email);
-          setPhone(response.data.phone);
-          setFormattedDate(response.data.dob);
-          console.log("Fetching success info");
-        } catch (error) {
-          console.error("Error fetching us booking:", error);
-        }
+  const fetchData = async () => {
+    try {
+      const response = await API.get(`users/${userId}`);
+      if (response.status === 200) {
+        setUserInfor(response.data);
+        setFullName(response.data.fullName);
+        setAddress(response.data.address);
+        setEmail(response.data.email);
+        setPhone(response.data.phone);
+        setFormattedDate(response.data.dob);
+        setPremium(response.data.premium);
+        console.log("Fetching success info", response.data);
+        console.log("Fetching success info");
       }
-    };
 
-    fetchData();
-  }, [userId]);
+    } catch (error) {
+      console.error("Error fetching us booking:", error);
+    }
 
-  const selectImage = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        includeBase64: false,
-      },
-      (response) => {
-        if (response.didCancel) {
-          console.log('User cancelled image picker');
-        } else if (response.errorMessage) {
-          console.log('ImagePicker Error: ', response.errorMessage);
-        } else {
-          const uri = response.assets[0]?.uri;
-          setImageUri(uri);
-        }
-      }
-    );
   };
+  // useEffect(() => {
+
+  //   if (userId != null && userId != undefined) {
+  //     fetchData();
+  //   }
+  // }, [userId]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+        if (userId) {
+          fetchData();
+        }
+    }, [userId])
+);
 
   const [date, setDate] = useState(new Date());
   const [show, setShow] = useState(false);
@@ -117,9 +116,8 @@ const ProfileScreen = () => {
     setShow(false);
     if (event.type === 'set' && selectedDate) {
       setDate(selectedDate);
-      // Định dạng ngày thành yyyy-mm-dd
       const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
 
       const formattedDate = `${year}-${month}-${day}`;
@@ -158,7 +156,7 @@ const ProfileScreen = () => {
     <SafeAreaView style={commonStyles.container}>
       <Header title={t('profile')} />
       <ScrollView style={commonStyles.containerContent}>
-        <View style={styles.uploadGroup}>
+        {/* <View style={styles.uploadGroup}>
           <TouchableOpacity onPress={requestPermission} style={{ margin: 20 }}>
             {imageUri && (
               <Image
@@ -167,15 +165,15 @@ const ProfileScreen = () => {
               />
 
             )}
-          </TouchableOpacity>
-          {/* {imageUri && (
-            <Image
+          </TouchableOpacity> */}
+        {/* {imageUri && (
+                   <Image
               source={{ uri: imageUri }}
               style={{ width: 150, height: 150, marginBottom: 10, borderRadius: 75 }}
-            />
+                  />
             
-          )} */}
-          {!imageUri && (
+                     )} */}
+        {/* {!imageUri && (
             <TouchableOpacity onPress={requestPermission} style={{ margin: 20 }}>
               <Image
                 source={
@@ -185,16 +183,31 @@ const ProfileScreen = () => {
             </TouchableOpacity>
           )}
 
-          {/* <TouchableOpacity onPress={selectImage} style={{ backgroundColor: '#BEF0FF', padding: 5, marginBottom: 20, borderRadius: 10, color: '#fff' }}>
-          <Text style={{ color: '#fff' }}>Upload Image</Text>
-        </TouchableOpacity> */}
+         
+        </View> */}
+
+        <View style={styles.profileHeader}>
+          <TouchableOpacity onPress={requestPermission} style={[styles.avatarContainer, premium != null && styles.premiumBorder]}>
+            {imageUri ? (
+              <Image
+                source={{ uri: imageUri }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Image
+                source={require('./../../assets/images/icons8-camera-50.png')}
+                style={styles.defaultAvatar}
+              />
+            )}
+          </TouchableOpacity>
+          {premium == true && <Text style={styles.premiumBadge}>Premium</Text>}
         </View>
         <Text style={[styles.header, { paddingTop: 20 }]}>
           {t('displayName')}
         </Text>
         <TextInput
           style={commonStyles.input}
-          placeholder="Bao Duy text holder"
+          placeholder="Full name"
           value={fullName}
           onChangeText={setFullName}
         />
@@ -253,7 +266,7 @@ const ProfileScreen = () => {
           />
         )}
         <View style={commonStyles.mainButtonContainer}>
-          <TouchableOpacity onPress={handleUpdate} style={[commonStyles.mainButton, style = { marginBottom: 100 }]}>
+          <TouchableOpacity onPress={() => handleUpdate()} style={[commonStyles.mainButton, style = { marginBottom: 100 }]}>
             <Text style={commonStyles.textMainButton}>{t('update')}</Text>
           </TouchableOpacity>
         </View>
@@ -286,6 +299,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  avatarContainer: {
+    borderRadius: 75,
+    padding: 5,
+  },
+  avatar: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  defaultAvatar: {
+    width: 100,
+    height: 100,
+  },
+  // Dành cho tài khoản Premium
+  premiumBorder: {
+    borderWidth: 2,
+    borderColor: '#D4AF37', // Viền vàng kim cho tài khoản Premium
+  },
+  premiumBadge: {
+    backgroundColor: '#D4AF37', // Vàng kim
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    marginTop: 10,
+  },
+
   header: {
     fontFamily: 'nunito-medium',
     color: '#4EA0B7',
@@ -328,7 +375,7 @@ const styles = StyleSheet.create({
   },
   modalText: {
     marginBottom: 15,
-    fontSize:18,
+    fontSize: 18,
     textAlign: 'center',
   },
   buttonClose: {
@@ -338,7 +385,7 @@ const styles = StyleSheet.create({
   },
   textClose: {
     color: 'white',
-    fontSize:16
+    fontSize: 16
   },
 });
 

@@ -194,7 +194,7 @@ const ProfileScreen = () => {
         </Text>
         <TextInput
           style={commonStyles.input}
-          placeholder="Van Tien Dep Trai So 1"
+          placeholder="Bao Duy text holder"
           value={fullName}
           onChangeText={setFullName}
         />

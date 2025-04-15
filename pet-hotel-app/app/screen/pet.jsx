@@ -131,7 +131,7 @@ const Pet = () => {
                             <Text style={styles.infoCardValue}>{selectedPetInfo? selectedPetInfo.weight +' Kg': 'NA'}</Text>
                         </View>
                         <View style={styles.infoCard}>
-                            <Text style={styles.infoCardLabel}>Tuổi lồn</Text>
+                            <Text style={styles.infoCardLabel}>Tuổi</Text>
                             <Text style={styles.infoCardValue}>{selectedPetInfo? selectedPetInfo.age:'NA'}</Text>
                         </View>
                         <View style={styles.infoCard}>

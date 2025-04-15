@@ -1,11 +1,12 @@
+import { View, Text } from 'react-native'
 import React from 'react'
-import { Text, View } from 'react-native'
-import MessageScreen from '../../components/Message/messages'
+import MessageScreen from './../../components/Message/messages'
+import { commonStyles } from "./../../style";
 
-const chat = () => {
+export default function Pet() {
   return (
-    <MessageScreen />
+    <View style={commonStyles.container}>
+      <MessageScreen/>
+    </View>
   )
 }
-
-export default chat

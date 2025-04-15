@@ -3,16 +3,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import SettingsScreen from '../screen/settings';
 
 const TabIcon = ({ iconName, color }) => (
     <View style={{
         width: 60, 
         height: 60,
         borderRadius: 30,
-        backgroundColor: color ? '#5EB0DB' : 'transparent', // Màu nền nếu tab được chọn
+        backgroundColor: color ? '#5EB0DB' : 'transparent', 
         justifyContent: 'center',
         alignItems: 'center',
     }}>

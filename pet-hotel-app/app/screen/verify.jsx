@@ -9,7 +9,6 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, Icon } from "react-native-elements";
 import { commonStyles } from "../../style";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "./../../components/Header/header";
@@ -52,7 +51,9 @@ const VerifyScreen = () => {
       if (response.status === 200) {
         console.log("Verification successful");
         Alert.alert(t("Success"), t("Verification successful!"));
-        router.push("/screen/init_profile");
+        // router.push("/screen/init_profile");
+        // router.push('/home');
+        router.push('screen/login');
       }
     } catch (error) {
       console.error("Verification failed:", error.message);

@@ -71,7 +71,7 @@ export default function SearchResult() {
       try {
         const response = await API.get('/shops');
         if (response.status === 200) {
-          console.log("fetch success", response.data);
+          // console.log("fetch success", response.data);
           setData(response.data.content);
         }
       } catch (error) {

@@ -2,6 +2,7 @@ import { useRouter,useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, Button, Image } from 'react-native';
 import check from './../../assets/images/check.png'; // Đảm bảo đường dẫn chính xác
+import SuccessIcon from "./../../assets/images/success.png";
 
 const SuccessScreen = () => {
     const router = useRouter();

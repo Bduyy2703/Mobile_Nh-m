@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,32 +9,94 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRoute } from "@react-navigation/native"; // To get the selected message
-import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
-
-const messages = [
-  {
-    id: 1,
-    text: "Chào shop, mình muốn book lịch dành cho thú cưng",
-    time: "12:05",
-    isSender: true,
-  },
-  {
-    id: 2,
-    text: "PetShop xin chào, bạn muốn đặt lịch loại dịch vụ nào vậy ạ?",
-    time: "12:06",
-    isSender: false,
-  },
-];
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { collection, addDoc, orderBy, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { database } from '../../config/firebase'; // Import Firestore config
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChatDetailScreen = () => {
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [userId, setUserId] = useState(null); // Lấy userId từ AsyncStorage
+  const [fullName, setFullName] = useState(null); // Lấy userId từ AsyncStorage
+  const [receiverId, setReceiverId] = useState(null); // Lấy receiverId
   const route = useRoute();
   const navigation = useNavigation();
-  const { contact } = route.params; // get passed contact details
+  const { contact } = route.params;
 
+  const [receiver, setReceiver] = useState({});
+
+  // Lấy thông tin userId và receiverId
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const name = await AsyncStorage.getItem('fullName');
+        setUserId(storedUserId);
+        setReceiverId(contact.id);
+        setFullName(name);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+
+  }, [contact]);
+
+
+  // Lấy dữ liệu tin nhắn từ Firebase
+  useEffect(() => {
+    if (!userId || !receiverId) return;
+
+    const collectionRef = collection(database, 'chats');
+    const q = query(collectionRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      setMessages(
+        querySnapshot.docs
+          .map(doc => doc.data())
+          .filter(
+            message =>
+              (message.sender === userId && message.receiver === receiverId) ||
+              (message.sender === receiverId && message.receiver === userId)
+          )
+          .map(doc => ({
+            id: doc._id,
+            text: doc.text,
+            time: doc.createdAt.toDate().toLocaleTimeString(),
+            isSender: doc.sender === userId,
+          }))
+      );
+    });
+
+    return unsubscribe;
+  }, [userId, receiverId]);
+
+  console.log("asd",messages);
+  // Gửi tin nhắn
+  const sendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    const newMessage = {
+      text: inputText,
+      createdAt: new Date(),
+      sender: userId,
+      user: {
+        _id: userId,
+        name: fullName,
+        avatar: 'https://i.pravatar.cc/300'
+      },
+      receiver: receiverId,
+      _id: Math.random().toString(36),
+    };
+    setInputText('');
+
+    await addDoc(collection(database, 'chats'), newMessage);
+  };
+
+  // Render từng tin nhắn
   const renderMessage = ({ item }) => (
     <View
       style={[
@@ -49,7 +111,6 @@ const ChatDetailScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={25} />
@@ -57,26 +118,31 @@ const ChatDetailScreen = () => {
         <Image source={{ uri: contact.avatar }} style={styles.avatar} />
         <View style={styles.headerContent}>
           <Text style={styles.name}>{contact.name}</Text>
-          <Text style={styles.onlineStatus}>online 10 giây trước</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate("screen/profileChat", {contact})}>
+        <TouchableOpacity onPress={() => navigation.navigate("screen/profileChat", { contact })}>
           <AntDesign name="infocirlce" size={24} color="black" />
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderMessage}
         style={styles.chatContainer}
+        inverted
       />
 
-      {/* Input */}
       <View style={styles.inputContainer}>
         <Ionicons name="image-outline" size={25} color="#7F7F7F" />
-        <TextInput style={styles.input} placeholder="Aa" />
-        <Ionicons name="send" size={25} color="#68A7AD" />
+        <TextInput
+          style={styles.input}
+          placeholder="Aa"
+          value={inputText}
+          onChangeText={setInputText}
+        />
+        <TouchableOpacity onPress={sendMessage}>
+          <Ionicons name="send" size={25} color="#68A7AD" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -107,6 +173,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: "bold",
+    color: '#222',
   },
   onlineStatus: {
     fontSize: 12,

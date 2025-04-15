@@ -1,13 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router'; 
 
-const Header = ({ title, isBack, isBackground }) => {
+const Header = ({ title }) => {
   const router = useRouter();
   return (
-    // <SafeAreaView style={styles.safeArea}>
       <View style={styles.notificationContainer}>
         <TouchableOpacity onPress={()=>{router.back()}}>
           <Ionicons name="arrow-back" size={24} color='white' />
@@ -18,7 +16,6 @@ const Header = ({ title, isBack, isBackground }) => {
         <Text > 
         </Text>
       </View>
-    // </SafeAreaView>
   );
 };
 

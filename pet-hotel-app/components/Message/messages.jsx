@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,53 +13,183 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import Header from "../Header/header";
 import { commonStyles } from "../../style";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native"; // For navigation
-
-const messages = [
-  {
-    id: 1,
-    name: "Martin Randolph",
-    message: "Bạn: Xin chào! Tôi tên...",
-    time: "19:40",
-    avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg",
-    read: false,
-  },
-  {
-    id: 2,
-    name: "Andrew Parker",
-    message: "Bạn: Ô! Cảm ơn nhiều",
-    time: "6:35",
-    avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg",
-    read: true,
-  },
-  {
-    id: 3,
-    name: "Karen Castillo",
-    message: "Bye, mai gặp nha!",
-    time: "T5",
-    avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg",
-    read: true,
-  },
-];
+import { useNavigation } from "@react-navigation/native";
+import { collection, query, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
+import { database } from "../../config/firebase";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MessageScreen = () => {
   const navigation = useNavigation();
+  const [messages, setMessages] = useState([]);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        setUserId(storedUserId);
+        console.log("user", userId);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+  }, [userId]);
+
+  async function getUserById(userId) {
+    if (typeof userId !== 'string') {
+      console.error('userId phải là một chuỗi!');
+      return null;
+    }
+    const userDocRef = doc(database, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      console.log('User Data:', userData);
+      return userData;
+    } else {
+      console.log('No such document!');
+      return null;
+    }
+  }
+
+  // useEffect(() => {
+  //   const fetchMessages = () => {
+  //     const collectionRef = collection(database, 'chats');
+  //     const q = query(collectionRef, orderBy('createdAt', 'desc'));
+
+  //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
+  //       const messagesData = {};
+
+  //       querySnapshot.forEach((doc) => {
+  //         const data = doc.data();
+  //         const key = data.sender === userId ? data.receiver : data.sender;
+  //         const userInfo =  getUserById(key);
+  //         const currentTime = new Date(data.createdAt.seconds * 1000);
+
+  //         if (!messagesData[key] ) {
+  //           messagesData[key] = {
+  //             id: key,
+  //             name: data.user.name, 
+  //             message: data.text,
+  //             time: currentTime.toLocaleTimeString(),
+  //             avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg", 
+  //             read: false, 
+  //           };
+  //         }
+  //       });
+
+
+  //       setMessages(Object.values(messagesData));
+  //       console.log("cc",messagesData);
+
+  //     });
+
+  //     return unsubscribe;
+  //   };
+
+  //   if (userId) {
+  //     const unsubscribe = fetchMessages();
+  //     return () => unsubscribe(); 
+  //   }
+  // }, [userId])
+
+  useEffect(() => {
+    const fetchMessages = () => {
+      const collectionRef = collection(database, 'chats');
+      const q = query(collectionRef, orderBy('createdAt', 'desc'));
+
+
+      const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+        const messagesData = {};
+        const userPromises = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.sender === userId || data.receiver === userId) {
+            const key = data.sender === userId ? data.receiver : data.sender;
+            console.log("key",key);
+            userPromises.push(getUserById(key).then(userInfo => {
+              if (userInfo) {
+                const currentTime = new Date(data.createdAt.seconds * 1000);
+                if (!messagesData[key]) {
+                  messagesData[key] = {
+                    id: key,
+                    name: userInfo.name,
+                    message: data.text,
+                    time: currentTime.toLocaleTimeString(),
+                    avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg",
+                    read: false,
+                  };
+                }
+              }
+            }));
+          }
+
+
+          // userPromises.push(getUserById(key).then(userInfo => {
+          //   if (userInfo) {
+          //     const currentTime = new Date(data.createdAt.seconds * 1000);
+          //     if (!messagesData[key]) {
+          //       messagesData[key] = {
+          //         id: key,
+          //         name: userInfo.name,
+          //         message: data.text,
+          //         time: currentTime.toLocaleTimeString(),
+          //         avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg",
+          //         read: false,
+          //       };
+          //     }
+          //   }
+          // }));
+          
+        });
+
+        await Promise.all(userPromises);
+
+        setMessages(Object.values(messagesData));
+        console.log("Messages Data:", messagesData);
+      });
+
+      return unsubscribe;
+    };
+
+    let unsubscribe;
+
+    if (userId!=null) {
+      unsubscribe = fetchMessages();
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [userId]);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.messageItem}
-      onPress={() => navigation.navigate("screen/chat", { contact: item })}
+      onPress={() => navigation.navigate("screen/chat", {
+        contact: {
+          id: item.id,
+          name: item.name,
+          avatar: item.avatar
+        }
+      })}
     >
       <Image source={{ uri: item.avatar }} style={styles.avatar} />
       <View style={styles.messageContent}>
         <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.message}>{item.message}</Text>
+        <Text style={styles.message} numberOfLines={1} ellipsizeMode="tail">
+          {item.message}
+        </Text>
       </View>
       <Text style={styles.time}>{item.time}</Text>
-      {item.read ? (
+      {/* {item.read ? (
         <Icon name="done-all" size={20} color="blue" />
       ) : (
         <Icon name="circle" size={12} color="gray" />
-      )}
+      )} */}
     </TouchableOpacity>
   );
 
@@ -79,25 +209,22 @@ const MessageScreen = () => {
 
         <FlatList
           data={messages}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
           renderItem={renderItem}
         />
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.addButton}
           onPress={() => navigation.navigate("screen/newMessage")}
         >
           <Ionicons name="add" size={25} color="white" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "white",
-  },
   messageItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -138,7 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
-  }
+  },
 });
 
 export default MessageScreen;

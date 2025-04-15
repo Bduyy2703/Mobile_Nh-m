@@ -12,7 +12,6 @@ const SubHeader = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const [id, setId] = useState(1);
-
   const handleJoinNow = () => {
     console.log("Join Now clicked!");
   };
@@ -45,7 +44,7 @@ const SubHeader = () => {
       </View>
 
       <View style={styles.servicesContainer}>
-        <ServiceButton onPress={handleBooking} title="Khách sạn" icon={HomeIcon} />
+        <ServiceButton title="Khách sạn" icon={HomeIcon} />
         <ServiceButton title="Spa & Grooming" icon={CutIcon} />
         <ServiceButton title="Thú y" icon={MedicalIcon} />
         <ServiceButton title="Tiêm ngừa" icon={VaccineIcon} />

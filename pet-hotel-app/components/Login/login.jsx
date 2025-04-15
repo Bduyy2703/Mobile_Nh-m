@@ -13,7 +13,8 @@ import BASE from '../../config/AXIOS_BASE';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from "jwt-decode";
-
+import { doc, setDoc } from 'firebase/firestore'; 
+import { database } from '../../config/firebase';
 const LoginScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -39,13 +40,23 @@ const LoginScreen = () => {
       const response = await BASE.post('/login', loginPayload);
       if (response.status === 200) {
         const token = response.data.access_token;
+        const fullName = response.data.fullName;
         const decodedToken = jwtDecode(token);
         const userId = decodedToken.userId;
+        const isPremium = decodedToken.isPremium;
+        console.log('Login successful, token:', decodedToken);
         console.log('Login successful, token:', token);
         console.log('Login successful, userId:', userId);
         await AsyncStorage.setItem('token', token);
         await AsyncStorage.setItem('userId', userId);
-
+        await AsyncStorage.setItem('fullName', fullName);
+        await AsyncStorage.setItem('isPremium', JSON.stringify(isPremium));
+        const userDocRef = doc(database, 'users', userId); 
+        await setDoc(userDocRef, {
+            _id: userId,
+            name: fullName,
+            avatar: 'https://i.pravatar.cc/300', 
+        });
         router.push('/home');
       }
     } catch (error) {

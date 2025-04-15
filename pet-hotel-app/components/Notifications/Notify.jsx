@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native"; // For navigation
-import { commonStyles } from "../../style/";
+import { commonStyles } from "../../style";
 import { router } from "expo-router";
 import Header from "../Header/header";
 

@@ -1,6 +1,5 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import React from "react";
-import { useUser } from "@clerk/clerk-expo";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
@@ -8,11 +7,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { commonStyles } from "../../style";
 
 export default function Header() {
-  const { user } = useUser();
   const router = useRouter();
   const handleNotification = () => {
     router.push("/screen/notifications");
   };
+
   return (
     <View style={styles.headerContainer}>
       <View>

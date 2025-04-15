@@ -47,7 +47,6 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: '#EEF7FD',
     borderWidth:2,
     borderColor:'#416FAE'
-    
   },
   subButton: {
     textAlign: 'center',

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ScrollView,
 } from "react-native";
 import axios from "axios";
 import { useRouter } from "expo-router";
@@ -92,8 +93,8 @@ const SignUpScreen = () => {
   };
 
   return (
-    <View style={commonStyles.containerContent}>
-      <StatusBar barStyle="dark-content" />
+    <ScrollView style={commonStyles.containerContent}>
+      {/* <StatusBar barStyle="dark-content" /> */}
       <View style={{ width: '100%', alignItems: 'center' }}>
       <Image
           source={require('./../../assets/images/logo.png')}
@@ -146,16 +147,16 @@ const SignUpScreen = () => {
           <Text style={commonStyles.textMainButton}>{t("createButton")}</Text>
         </TouchableOpacity>
       </View>
-      <Text style={commonStyles.orText}>________________________________________</Text>
+      {/* <Text style={commonStyles.orText}>________________________________________</Text>
       <View style={commonStyles.buttonContainer}>
         <TouchableOpacity style={commonStyles.googleButton} onPress={() => {}}>
           <Image source={googleIcon} style={{ width: 50, height: 50 }} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         {/* <TouchableOpacity style={commonStyles.facebookButton} onPress={() => {}}>
           <Image source={facebookIcon} style={{ width: 50, height: 50 }} />
         </TouchableOpacity> */}
-      </View>
-    </View>
+      {/* </View> */}
+    </ScrollView>
   );
 };
 

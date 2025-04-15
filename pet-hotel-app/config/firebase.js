@@ -1,0 +1,26 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import Constants from "expo-constants";
+
+// In giá trị để kiểm tra
+console.log("Firebase Config từ Constants:", Constants.expoConfig.extra);
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: Constants.expoConfig.extra.apiKey,
+  authDomain: Constants.expoConfig.extra.authDomain,
+  projectId: Constants.expoConfig.extra.projectId,
+  storageBucket: Constants.expoConfig.extra.storageBucket,
+  messagingSenderId: Constants.expoConfig.extra.messagingSenderId,
+  appId: Constants.expoConfig.extra.appId,
+  databaseURL: Constants.expoConfig.extra.databaseURL,
+};
+
+// Kiểm tra projectId
+if (!firebaseConfig.projectId) {
+  console.error("Lỗi: projectId không được định nghĩa hoặc là undefined!");
+}
+
+// Initialize Firebase
+initializeApp(firebaseConfig);
+export const database = getFirestore();

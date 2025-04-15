@@ -35,7 +35,7 @@ const LoginScreen = () => {
       usernameOrEmail: usernameOrEmail,
       password: password,
     };
-
+  
     try {
       const response = await BASE.post('/login', loginPayload);
       if (response.status === 200) {
@@ -44,30 +44,35 @@ const LoginScreen = () => {
         const decodedToken = jwtDecode(token);
         const userId = decodedToken.userId;
         const isPremium = decodedToken.isPremium;
-        console.log('Login successful, token:', decodedToken);
-        console.log('Login successful, token:', token);
-        console.log('Login successful, userId:', userId);
+  
+        // Lưu dữ liệu vào AsyncStorage
         await AsyncStorage.setItem('token', token);
         await AsyncStorage.setItem('userId', userId);
         await AsyncStorage.setItem('fullName', fullName);
         await AsyncStorage.setItem('isPremium', JSON.stringify(isPremium));
-        const userDocRef = doc(database, 'users', userId); 
-        await setDoc(userDocRef, {
+  
+        // Ghi dữ liệu vào Firestore, nhưng không để lỗi Firestore ảnh hưởng đến chuyển hướng
+        try {
+          const userDocRef = doc(database, 'users', userId);
+          await setDoc(userDocRef, {
             _id: userId,
             name: fullName,
-            avatar: 'https://i.pravatar.cc/300', 
-        });
+            avatar: 'https://i.pravatar.cc/300',
+          });
+        } catch (firestoreError) {
+          console.error('Lỗi ghi dữ liệu Firestore:', firestoreError);
+          // Có thể thông báo lỗi, nhưng không dừng chuyển hướng
+        }
+  
+        // Chuyển hướng sang /home bất kể Firestore thành công hay thất bại
+        console.log('Chuyển hướng sang /home');
         router.push('/home');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
-      console.error('Login failed:', errorMessage);
-
-      // Alert for failed login attempt
-      Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
+      console.error('Đăng nhập thất bại:', errorMessage);
+      Alert.alert('Đăng nhập thất bại', 'Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
     }
-
-    // router.push('/home');
   };
 
   const isValidEmail = (email) => {

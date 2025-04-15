@@ -44,8 +44,15 @@
     },
     "extra": {
       "eas": {
-        "projectId": "56c77c72-b119-4230-aa7a-93c4a1182b90"
-      }
+        "projectId": "a1f7d9ec-3cd7-41dc-b3ad-d367e1bd1138"
+      },
+      "apiKey": "AIzaSyA0y5UyPI2ctm4bJPo-qCwOaaBFGNa5GrI",
+      "authDomain": "apehome-28e3d.firebaseapp.com",
+      "projectId": "apehome-28e3d",
+      "storageBucket": "apehome-28e3d.appspot.com",
+      "messagingSenderId": "743650136553",
+      "appId": "1:743650136553:web:e2f2c9743afe15759dbb78",
+      "databaseURL": "https://apehome-28e3d.firebaseio.com"
     }
   }
 }

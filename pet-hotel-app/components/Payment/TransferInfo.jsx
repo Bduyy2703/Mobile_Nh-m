@@ -12,7 +12,6 @@ import {
 import { ActivityIndicator, Button, Modal, Portal } from "react-native-paper";
 import QRCode from "react-native-qrcode-svg";
 import ViewShot from "react-native-view-shot";
-import SocketIOClient from "socket.io-client";
 import { getBanksList } from "../../config/Api";
 import { captureRef } from "react-native-view-shot";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -22,7 +21,6 @@ import { useRouter } from "expo-router";
 import API from "../../config/AXIOS_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// const socket = SocketIOClient("http://192.168.100.10:8080");
 
 const TransferInfo = ({
   accountName,
@@ -33,15 +31,14 @@ const TransferInfo = ({
   qrCode,
   orderCode,
   paymentLinkId,
+  type
 }) => {
   const [bank, setBank] = useState({ logo: undefined, name: undefined });
   const [visible, setVisible] = useState(false);
   const [isPaymentUpdated, setIsPaymentUpdated] = useState(false);
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
-  const [orderStatus, setOrderStatus] = useState("");
-  const [statusData, setstatusData] = useState({});
-  const [checkStatus, setcheckStatus] = useState({});
+  
 
   const viewShotRef = useRef();
   const navigation = useNavigation();
@@ -133,8 +130,12 @@ const TransferInfo = ({
 
         if (statusData.status === "PAID") {
           clearInterval(intervalId); 
-          updateStatus="PAID";
+          updateStatus="SUCCESS";
           handleUpdatePayment(updateStatus);
+          console.log("Type",type);
+          if(type){
+            await AsyncStorage.setItem('isPremium',JSON.stringify(true));
+          }
           router.push({
             pathname: `screen/success`,
             params: { orderCode },

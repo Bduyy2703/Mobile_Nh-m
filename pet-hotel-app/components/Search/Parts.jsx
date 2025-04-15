@@ -86,11 +86,11 @@ export default function Parts() {
           <Text style={{ color: 'white' }}>Phong kham</Text>
         </TouchableOpacity> */}
       </View>
-      <FlatList
+      {/* <FlatList
         data={hotels}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderHotelItem}
-      />
+      /> */}
     </View>
   );
 }

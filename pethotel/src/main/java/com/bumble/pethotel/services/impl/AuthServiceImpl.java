@@ -211,18 +211,14 @@ public class AuthServiceImpl implements AuthService {
         if (username != null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            // Fetch the User entity
             User user = this.userRepository.findByUsernameOrEmail(username, username)
                     .orElseThrow(() -> new PetApiException(HttpStatus.BAD_REQUEST, "User not found"));
 
             if (!token.isRevoked() && !token.isExpired()) {
-                // Map user to authentication
+ 
                 Authentication userAuthentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                // Generate access token with user details
                 String accessToken = jwtTokenProvider.generateAccessToken(userAuthentication, user);
-
-                // Revoke previous access tokens and save the new one
                 revokeAllUserAccessTokens(user);
                 saveUserAccessToken(user, accessToken, token);
 
@@ -251,7 +247,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setEmailVerified(true);
-        user.setVerificationCode(null); // Clear the code after verification
+        user.setVerificationCode(null); 
         user.setVerificationCodeExpiry(null);
         userRepository.save(user);
         return "Email verified successfully!";
@@ -288,9 +284,9 @@ public class AuthServiceImpl implements AuthService {
             throw new PetApiException(HttpStatus.BAD_REQUEST, "Password reset token has expired.");
         }
 
-        // Update user's password
+
         user.setPassword(passwordEncoder.encode(newPasswordRequest.getNewPassword()));
-        user.setResetPasswordToken(null); // Clear the reset token
+        user.setResetPasswordToken(null);
         user.setResetPasswordExpiry(null);
         userRepository.save(user);
 

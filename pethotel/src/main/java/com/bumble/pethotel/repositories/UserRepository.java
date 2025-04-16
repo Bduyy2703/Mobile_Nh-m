@@ -28,13 +28,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllNotDeleted(Pageable pageable);
 
     Page<User> findByRoleAndIsDeleteFalse(Role role, Pageable pageable);
-
+    Optional<User> findByUsername(String username);
     Optional<User> findByUid(String uid);
     Optional<User> findByResetPasswordToken(String token);
     Optional<User> findByResetPasswordTokenAndEmail(String token, String email);
     List<User> findByIsPremiumTrue();
-
-
-
-
 }

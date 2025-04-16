@@ -4,10 +4,8 @@ import com.bumble.pethotel.models.entity.*;
 import com.bumble.pethotel.models.exception.PetApiException;
 import com.bumble.pethotel.models.payload.dto.ImageFileDto;
 import com.bumble.pethotel.models.payload.dto.PetDto;
-import com.bumble.pethotel.models.payload.dto.ShopDto;
 import com.bumble.pethotel.models.payload.requestModel.PetUpdated;
 import com.bumble.pethotel.models.payload.responseModel.PetsResponese;
-import com.bumble.pethotel.models.payload.responseModel.ShopsResponse;
 import com.bumble.pethotel.repositories.PetRepository;
 import com.bumble.pethotel.repositories.PetTypeRepository;
 import com.bumble.pethotel.repositories.UserRepository;
@@ -42,23 +40,24 @@ public class PetServiceImpl implements PetService {
     private PetTypeRepository petTypeRepository;
     @Autowired
     private UserRepository userRepository;
+
     @Override
-    public PetDto savePet(PetDto petDto) {
+    public PetDto savePet(PetDto petDto, Long userId, List<MultipartFile> files) {
         Optional<PetType> petType = petTypeRepository.findById(petDto.getPetTypeId());
-        Optional<User> user = userRepository.findById(petDto.getUserId());
-        if (petType.isEmpty()){
-            throw new PetApiException(HttpStatus.NOT_FOUND, "Pet Type not found with id: "+ petDto.getPetTypeId());
+        Optional<User> user = userRepository.findById(userId);
+        if (petType.isEmpty()) {
+            throw new PetApiException(HttpStatus.NOT_FOUND, "Pet Type not found with id: " + petDto.getPetTypeId());
         }
-        if (user.isEmpty()){
-            throw new PetApiException(HttpStatus.NOT_FOUND, "User not found with id: "+ petDto.getUserId());
+        if (user.isEmpty()) {
+            throw new PetApiException(HttpStatus.NOT_FOUND, "User not found with id: " + userId);
         }
         Pet pet0 = modelMapper.map(petDto, Pet.class);
+        pet0.setUser(user.get());
         pet0.setDelete(false);
         Pet pet = petRepository.save(pet0);
-        if (petDto.getFiles() != null && !petDto.getFiles().isEmpty()) {
-            List<String> uploadedUrls = cloudinaryService.uploadFiles(petDto.getFiles(), "pets/" + pet.getId());
+        if (files != null && !files.isEmpty()) {
 
-            // Save the image URLs to the shop entity
+            List<String> uploadedUrls = cloudinaryService.uploadFiles(files, "pets/" + pet.getId());
             Set<ImageFile> imageFiles = new HashSet<>();
             for (String url : uploadedUrls) {
                 if (!"default".equals(url)) {
@@ -73,50 +72,38 @@ public class PetServiceImpl implements PetService {
             if (pet.getImageFile() == null) {
                 pet.setImageFile(new HashSet<>());
             }
-
             pet.getImageFile().addAll(imageFiles);
+            petRepository.save(pet);
         }
-        return modelMapper.map(petRepository.save(pet), PetDto.class);
+        return modelMapper.map(pet, PetDto.class);
     }
 
     @Override
     public PetDto getPetById(Long id) {
         Optional<Pet> pet = petRepository.findById(id);
-        if(pet.isEmpty()){
-            throw new PetApiException(HttpStatus.NOT_FOUND, "Pet not found with id: "+ id);
-
+        if (pet.isEmpty()) {
+            throw new PetApiException(HttpStatus.NOT_FOUND, "Pet not found with id: " + id);
         }
         PetDto petDto = modelMapper.map(pet.get(), PetDto.class);
-
-        // Chuyển đổi Set<ImageFile> thành Set<ImageFileDto>
         Set<ImageFileDto> imageFileDtos = pet.get().getImageFile().stream()
                 .map(imageFile -> new ImageFileDto(
                         imageFile.getId(),
                         imageFile.getUrl(),
-                        imageFile.getCreatedAt().toString() // Hoặc định dạng ngày tháng khác nếu cần
+                        imageFile.getCreatedAt().toString()
                 ))
                 .collect(Collectors.toSet());
-
-        // Gán imageFileDtos vào shopDto
         petDto.setImageFile(imageFileDtos);
-        return modelMapper.map(pet.get(),PetDto.class);
+        return petDto;
     }
 
     @Override
     public PetsResponese getAllPet(int pageNo, int pageSize, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
-
-        // create Pageable instance
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
         Page<Pet> pets = petRepository.findAllNotDeleted(pageable);
-
-        // get content for page object
         List<Pet> listOfPets = pets.getContent();
-
         List<PetDto> content = listOfPets.stream().map(bt -> modelMapper.map(bt, PetDto.class)).collect(Collectors.toList());
-
         PetsResponese templatesResponse = new PetsResponese();
         templatesResponse.setContent(content);
         templatesResponse.setPageNo(pets.getNumber());
@@ -124,28 +111,19 @@ public class PetServiceImpl implements PetService {
         templatesResponse.setTotalElements(pets.getTotalElements());
         templatesResponse.setTotalPages(pets.getTotalPages());
         templatesResponse.setLast(pets.isLast());
-
         return templatesResponse;
-
     }
 
     @Override
     public PetsResponese getPetByUserId(Long userId, int pageNo, int pageSize, String sortBy, String sortDir) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new PetApiException(HttpStatus.NOT_FOUND,"User not found with id: "+ userId));
+                .orElseThrow(() -> new PetApiException(HttpStatus.NOT_FOUND, "User not found with id: " + userId));
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
-
-        // create Pageable instance
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
-        Page<Pet> pets = petRepository.findByUserAndIsDeleteFalse(user,pageable);
-
-        // get content for page object
+        Page<Pet> pets = petRepository.findByUserAndIsDeleteFalse(user, pageable);
         List<Pet> listOfPets = pets.getContent();
-
         List<PetDto> content = listOfPets.stream().map(bt -> modelMapper.map(bt, PetDto.class)).collect(Collectors.toList());
-
         PetsResponese templatesResponse = new PetsResponese();
         templatesResponse.setContent(content);
         templatesResponse.setPageNo(pets.getNumber());
@@ -153,7 +131,6 @@ public class PetServiceImpl implements PetService {
         templatesResponse.setTotalElements(pets.getTotalElements());
         templatesResponse.setTotalPages(pets.getTotalPages());
         templatesResponse.setLast(pets.isLast());
-
         return templatesResponse;
     }
 
@@ -163,7 +140,6 @@ public class PetServiceImpl implements PetService {
         if (petOptional.isEmpty()) {
             throw new PetApiException(HttpStatus.NOT_FOUND, "Pet not found with id: " + id);
         }
-
         Pet pet = petOptional.get();
         pet.setName(petUpdated.getName() != null ? petUpdated.getName() : pet.getName());
         pet.setAge(petUpdated.getAge() > 0 ? petUpdated.getAge() : pet.getAge());
@@ -178,8 +154,6 @@ public class PetServiceImpl implements PetService {
         }
         if (petUpdated.getFiles() != null && !petUpdated.getFiles().isEmpty()) {
             List<String> uploadedUrls = cloudinaryService.uploadFiles(petUpdated.getFiles(), "pets/" + id);
-
-            // Save the image URLs to the shop entity
             Set<ImageFile> imageFiles = new HashSet<>();
             for (String url : uploadedUrls) {
                 if (!"default".equals(url)) {
@@ -191,7 +165,6 @@ public class PetServiceImpl implements PetService {
                     imageFiles.add(imageFile);
                 }
             }
-
             pet.getImageFile().addAll(imageFiles);
         }
         Pet updatedPet = petRepository.save(pet);
@@ -200,16 +173,12 @@ public class PetServiceImpl implements PetService {
 
     @Override
     public String uploadImagePet(Long id, List<MultipartFile> files) {
-        // Check if the shop exists
         Optional<Pet> pet = petRepository.findById(id);
         if (pet.isEmpty()) {
             throw new PetApiException(HttpStatus.NOT_FOUND, "Pet not found with id: " + id);
         }
         Pet pet1 = pet.get();
-
         List<String> uploadedUrls = cloudinaryService.uploadFiles(files, "pets/" + id);
-
-        // Save the image URLs to the shop entity
         Set<ImageFile> imageFiles = new HashSet<>();
         for (String url : uploadedUrls) {
             if (!"default".equals(url)) {
@@ -221,10 +190,8 @@ public class PetServiceImpl implements PetService {
                 imageFiles.add(imageFile);
             }
         }
-
         pet1.getImageFile().addAll(imageFiles);
         petRepository.save(pet1);
-
         return "Successfully uploaded " + uploadedUrls.size() + " image(s) for pet with id: " + id;
     }
 

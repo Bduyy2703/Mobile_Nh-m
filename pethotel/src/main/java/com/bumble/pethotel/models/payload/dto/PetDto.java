@@ -5,9 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -39,10 +37,6 @@ public class PetDto {
     @NotNull(message = "Pet Type ID is required")
     private Long petTypeId;
 
-    @NotNull(message = "User ID is required")
-    private Long userId;
     private Set<ImageFileDto> imageFile;
-    private List<MultipartFile> files;
-
-
+    // Đã xóa trường files, nhận qua @RequestParam
 }

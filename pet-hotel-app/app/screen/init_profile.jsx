@@ -19,7 +19,6 @@ import { commonStyles } from "../../style";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Header from "../../components/Header/header";
 import * as ImagePicker from "expo-image-picker";
-import RNFetchBlob from "rn-fetch-blob"; // Thêm import rn-fetch-blob
 
 const InitProfileScreen = () => {
   const router = useRouter();
@@ -96,6 +95,21 @@ const InitProfileScreen = () => {
     }
   };
 
+  const uriToBlob = async (uri) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        resolve(xhr.response);
+      };
+      xhr.onerror = function () {
+        reject(new Error("uriToBlob failed"));
+      };
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
+    });
+  };
+
   const handleAdd = async () => {
     if (!petName) {
       Alert.alert(t("error"), t("nameRequired"));
@@ -123,45 +137,45 @@ const InitProfileScreen = () => {
     }
 
     setLoading(true);
-
-    // Tạo body cho rn-fetch-blob
-    const body = [
-      { name: "name", data: petName },
-      { name: "age", data: petAge || "0" },
-      { name: "breed", data: petBreed },
-      { name: "color", data: petColor },
-      { name: "weight", data: petWeight },
-      { name: "gender", data: petGender },
-      { name: "petTypeId", data: petType },
-    ];
+    const formData = new FormData();
+    formData.append("name", petName);
+    formData.append("age", petAge || "0");
+    formData.append("breed", petBreed);
+    formData.append("color", petColor);
+    formData.append("weight", petWeight);
+    formData.append("gender", petGender);
+    formData.append("petTypeId", petType);
 
     if (imageUri) {
       console.log("Appending image with URI:", imageUri);
-      body.push({
-        name: "files",
-        filename: `pet_image_${Date.now()}.jpg`,
-        type: "image/jpeg",
-        data: RNFetchBlob.wrap(
+      try {
+        const blob = await uriToBlob(
           Platform.OS === "android" ? imageUri : imageUri.replace("file://", "")
-        ),
-      });
+        );
+        formData.append("files", blob, `pet_image_${Date.now()}.jpg`);
+      } catch (error) {
+        console.error("Error converting URI to Blob:", error);
+        Alert.alert(t("error"), t("imageConversionFailed"));
+        setLoading(false);
+        return;
+      }
+    } else {
+      console.log("No image selected");
     }
 
     try {
-      console.log("Sending FormData to create pet with rn-fetch-blob");
-      const response = await RNFetchBlob.fetch(
-        "POST",
-        "http://192.168.50.89:9090/api/v1/pets",
-        {
+      console.log("Sending FormData to create pet with fetch");
+      const response = await fetch("http://192.168.50.89:9090/api/v1/pets", {
+        method: "POST",
+        headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
         },
-        body
-      );
-      const result = response.json();
-      console.log("Response status:", response.respInfo.status);
+        body: formData,
+      });
+      const result = await response.json();
+      console.log("Response status:", response.status);
       console.log("Response data:", result);
-      if (response.respInfo.status === 201) {
+      if (response.status === 201) {
         Alert.alert(t("success"), t("petCreated"));
         router.push("/screen/pet");
       } else {

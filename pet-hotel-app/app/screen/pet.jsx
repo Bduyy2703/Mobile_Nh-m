@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { commonStyles } from "../../style";
-import { useRouter, useFocusEffect } from 'expo-router'; // Import useFocusEffect
+import { useRouter, useFocusEffect } from 'expo-router';
 import DropDownPicker from 'react-native-dropdown-picker';
 import API from '../../config/AXIOS_API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from "react-i18next";
 
 const Pet = () => {
     const router = useRouter();
+    const { t } = useTranslation();
     const [token, setToken] = useState(null);
-    const [selectedPet, setSelectedPet] = useState('');
+    const [selectedPet, setSelectedPet] = useState(null);
     const [open, setOpen] = useState(false);
     const [pets, setPets] = useState([]);
     const petOptions = pets.map(pet => ({
@@ -20,10 +22,9 @@ const Pet = () => {
     }));
     const selectedPetInfo = pets.find(pet => pet.id === selectedPet) || {};
 
-    // Use optional chaining to safely access properties
     const petImageUrl = selectedPetInfo.imageFile?.length > 0
         ? selectedPetInfo.imageFile[0].url
-        : "https://i.imgur.com/1tMFzp8.png"; // Default image
+        : "https://i.imgur.com/1tMFzp8.png";
 
     console.log("Pet image URL:", petImageUrl);
     const [userId, setUserId] = useState(null);
@@ -32,6 +33,11 @@ const Pet = () => {
         const fetchUserId = async () => {
             const userIdcc = await AsyncStorage.getItem("userId");
             const tokencc = await AsyncStorage.getItem('token');
+            if (!userIdcc || !tokencc) {
+                Alert.alert(t("error"), t("notLoggedIn"));
+                router.push("/login");
+                return;
+            }
             setUserId(userIdcc);
             setToken(tokencc);
         };
@@ -39,24 +45,28 @@ const Pet = () => {
         fetchUserId();
     }, []);
 
-    // Function to fetch pet data
     const fetchPetData = async () => {
         try {
+            console.log("Fetching pets for userId:", userId);
             const response = await API.get(`/pets/users/${userId}`);
+            console.log("Fetch pet response status:", response.status);
+            console.log("Fetch pet response data:", response.data);
             if (response.status === 200) {
                 const petsData = response.data.content;
                 setPets(petsData);
-                console.log("Fetched pets data:", petsData); // Log the fetched data
+                console.log("Fetched pets data:", petsData);
                 if (petsData.length > 0) {
-                    setSelectedPet(petsData[0].id); // Set to the first pet's ID
+                    setSelectedPet(petsData[0].id);
+                } else {
+                    setSelectedPet(null);
                 }
             }
         } catch (error) {
             console.error('Fetch pet data failed:', error);
+            Alert.alert(t("error"), t("fetchPetDataFailed"));
         }
     };
 
-    // Use useFocusEffect to fetch pet data whenever the screen is focused
     useFocusEffect(
         React.useCallback(() => {
             if (userId) {
@@ -66,54 +76,102 @@ const Pet = () => {
     );
 
     const handleEdit = () => {
-        if (selectedPetInfo) {
-            router.push({
-                pathname: 'screen/update_pet',
-                params: {
-                    id: selectedPetInfo.id,
-                    name: selectedPetInfo.name,
-                    breed: selectedPetInfo.breed,
-                    color: selectedPetInfo.color,
-                    gender: selectedPetInfo.gender,
-                    petTypeId: selectedPetInfo.petTypeId,
-                    weight: selectedPetInfo.weight,
-                    age: selectedPetInfo.age,
-                    imageFile: selectedPetInfo.imageFile[0].url,
-                }
-            });
+        if (!selectedPetInfo.id) {
+            Alert.alert(t("error"), t("noPetSelected"));
+            return;
         }
+        router.push({
+            pathname: 'screen/updatePet',
+            params: {
+                id: selectedPetInfo.id,
+                name: selectedPetInfo.name,
+                breed: selectedPetInfo.breed,
+                color: selectedPetInfo.color,
+                gender: selectedPetInfo.gender,
+                petTypeId: selectedPetInfo.petTypeId,
+                weight: selectedPetInfo.weight,
+                age: selectedPetInfo.age,
+                imageUrl: selectedPetInfo.imageFile?.length > 0 ? selectedPetInfo.imageFile[0].url : '',
+            }
+        });
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
+        console.log("Delete button pressed");
+        console.log("Selected pet:", selectedPetInfo);
+
+        if (!selectedPetInfo.id) {
+            Alert.alert(t("error"), t("noPetSelected"));
+            return;
+        }
+
+        if (!token) {
+            Alert.alert(t("error"), t("notLoggedIn"));
+            router.push("/login");
+            return;
+        }
+
+        console.log("Token before API call:", token);
+        console.log("Showing Alert.alert for confirmation");
+
+        // Tạm thời bỏ Alert.alert để gọi API trực tiếp (debug)
+        try {
+            console.log("Deleting pet with ID:", selectedPetInfo.id);
+            console.log("Using token:", token);
+            const response = await API.delete(`/pets/${selectedPetInfo.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            console.log("Delete response status:", response.status);
+            console.log("Delete response data:", response.data);
+            if (response.status === 200) {
+                Alert.alert(t("success"), t("petDeleted"));
+                await fetchPetData();
+            }
+        } catch (error) {
+            console.error('Delete pet failed:', error);
+            console.error('Error details:', error.response?.data);
+            Alert.alert(t("error"), t("deletePetFailed") + (error.response?.data?.message ? `: ${error.response.data.message}` : ''));
+        }
+
+        // Code gốc với Alert.alert (sẽ khôi phục sau khi debug)
+        /*
         Alert.alert(
-            "Xác nhận xóa",
-            "Bạn có chắc chắn muốn xóa thú cưng này?",
+            t("confirmDelete"),
+            t("deletePetConfirmation"),
             [
                 {
-                    text: "Hủy",
+                    text: t("cancel"),
                     style: "cancel"
                 },
                 {
-                    text: "Xóa",
+                    text: t("delete"),
                     onPress: async () => {
                         try {
+                            console.log("Deleting pet with ID:", selectedPetInfo.id);
+                            console.log("Using token:", token);
                             const response = await API.delete(`/pets/${selectedPetInfo.id}`, {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
                                 },
                             });
+                            console.log("Delete response status:", response.status);
+                            console.log("Delete response data:", response.data);
                             if (response.status === 200) {
-                                console.log("deleted");
-                                fetchPetData();
-                                setSelectedPet(pets.length > 1 ? pets[1].id : '');
+                                Alert.alert(t("success"), t("petDeleted"));
+                                await fetchPetData();
                             }
                         } catch (error) {
                             console.error('Delete pet failed:', error);
+                            console.error('Error details:', error.response?.data);
+                            Alert.alert(t("error"), t("deletePetFailed") + (error.response?.data?.message ? `: ${error.response.data.message}` : ''));
                         }
                     }
                 }
             ]
         );
+        */
     };
 
     return (
@@ -122,16 +180,16 @@ const Pet = () => {
                 <Image
                     source={{
                         uri: selectedPetInfo && selectedPetInfo.imageFile && selectedPetInfo.imageFile.length > 0
-                            ? selectedPetInfo.imageFile
+                            ? [...selectedPetInfo.imageFile]
                                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]?.url
-                            : "https://i.imgur.com/1tMFzp8.png" // URL ảnh mặc định
+                            : "https://i.imgur.com/1tMFzp8.png"
                     }}
                     resizeMode={'stretch'}
                     style={styles.petImage}
                 />
 
                 <View style={styles.topButton}>
-                    <TouchableOpacity onPress={() => { router.back() }} style={styles.backButton}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Icon name="arrow-back-outline" size={24} color="#fff" />
                     </TouchableOpacity>
                     <View>
@@ -144,7 +202,7 @@ const Pet = () => {
                             setItems={setPets}
                             style={styles.dropdown}
                             dropDownContainerStyle={styles.dropdownContainer}
-                            placeholder="Chọn thú cưng"
+                            placeholder={t("selectPet")}
                             zIndex={1000}
                             textStyle={styles.dropdownText}
                             arrowIconStyle={{ display: 'none' }}
@@ -167,15 +225,16 @@ const Pet = () => {
                         flexDirection: 'column',
                         justifyContent: 'flex-start'
                     }}>
-                        <Text style={styles.petName}>{selectedPetInfo ? selectedPetInfo.name : 'NA'}</Text>
-                        <Text style={styles.petDetails}>{`${selectedPetInfo ? selectedPetInfo.breed : 'NA'}`}</Text>
+                        <Text style={styles.petName}>{selectedPetInfo ? selectedPetInfo.name : t("na")}</Text>
+                        <Text style={styles.petDetails}>{`${selectedPetInfo ? selectedPetInfo.breed : t("na")}`}</Text>
                     </View>
 
                     <View style={{
                         display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'flex-end',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        zIndex: 1,
                     }}>
                         <TouchableOpacity onPress={handleEdit} style={{ marginLeft: 10 }}>
                             <Icon name="pencil" size={24} color="#000" />
@@ -189,16 +248,16 @@ const Pet = () => {
 
                 <View style={styles.infoCardsContainer}>
                     <View style={styles.infoCard}>
-                        <Text style={styles.infoCardLabel}>Cân Nặng</Text>
-                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.weight + ' Kg' : 'NA'}</Text>
+                        <Text style={styles.infoCardLabel}>{t("weight")}</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.weight + ' Kg' : t("na")}</Text>
                     </View>
                     <View style={styles.infoCard}>
-                        <Text style={styles.infoCardLabel}>Tuổi</Text>
-                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.age : 'NA'}</Text>
+                        <Text style={styles.infoCardLabel}>{t("age")}</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.age : t("na")}</Text>
                     </View>
                     <View style={styles.infoCard}>
-                        <Text style={styles.infoCardLabel}>Màu Sắc</Text>
-                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.color : 'NA'}</Text>
+                        <Text style={styles.infoCardLabel}>{t("color")}</Text>
+                        <Text style={styles.infoCardValue}>{selectedPetInfo ? selectedPetInfo.color : t("na")}</Text>
                     </View>
                 </View>
             </View>
@@ -211,43 +270,22 @@ const styles = StyleSheet.create({
         position: 'relative',
         height: '45%'
     },
-    row: {
-        paddingTop: 20,
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 29,
-        marginHorizontal: 15,
-    },
-    column: {
-        height: 387,
-        paddingVertical: 18,
-        marginBottom: 35,
-    },
-
     petImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover'
     },
-
     topButton: {
         width: '100%',
         position: 'absolute',
-        // top: 40,
-        // display:'flex',
         flexDirection: 'row',
         alignItems: 'center',
         padding: 10,
         paddingLeft: 10,
         paddingRight: 10,
         justifyContent: 'space-between'
-        // justifyContent:'center'
     },
     backButton: {
-        // position: 'absolute',
-        // top: 40,
-        // left: 20,
-        // flex:1,
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
         padding: 10,
         borderRadius: 20
@@ -260,7 +298,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
         borderWidth: 1,
-        borderRadius: 10, justifyContent: 'center',
+        borderRadius: 10,
+        justifyContent: 'center',
         paddingVertical: 5,
         paddingHorizontal: 10,
     },
@@ -277,18 +316,12 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18
     },
-
     plusButton: {
-        // position: 'absolute',
-        // top: 40,
-        // right: 20,
-        // flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
         padding: 10,
         borderRadius: 20
     },
     petInfoContainer: {
-
         height: '100%',
         backgroundColor: '#fff',
         borderTopLeftRadius: 20,
@@ -326,18 +359,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginTop: 5
-    },
-    tabView: {
-        flex: 1,
-        backgroundColor: '#fff'
-    },
-    tabContent: {
-        padding: 20,
-        // backgroundColor: '#000'
-
     }
-
-
 });
 
 export default Pet;

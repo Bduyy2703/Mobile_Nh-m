@@ -120,7 +120,7 @@ const Booking = () => {
 
   const fetchPets = async () => {
     try {
-      const response = await BASE.get(`/pets/users/${userId}`);
+      const response = await API.get(`/pets/users/${userId}`);
       if (response.status === 200) {
         setPetList(response.data.content);
       }
@@ -132,7 +132,7 @@ const Booking = () => {
 
   const fetchRooms = async () => {
     try {
-      const response = await BASE.get(`rooms/available/shops/random-room-by-sign?sign=${selectType}`);
+      const response = await API.get(`rooms/available/shops/random-room-by-sign?sign=${selectType}`);
       if (response.status === 200) {
         setRooms(response.data);
         setRoomId(response.data.id);
@@ -145,7 +145,7 @@ const Booking = () => {
 
   const fetchSign = async () => {
     try {
-      const response = await BASE.get(`/rooms/available/shops/${id}`);
+      const response = await API. get(`/rooms/available/shops/${id}`);
       if (response.status === 200) {
         setSigns(response.data);
       }

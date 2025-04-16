@@ -1,31 +1,37 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export const commonStyles = StyleSheet.create({
   container: {
     flex: 1,
-    // padding: 16,
     paddingTop: 0,
     backgroundColor: '#FDFBF6',
-    // fontFamily:'nunito-medium',
+    fontFamily: 'nunito-medium',
   },
   containerContent: {
     flex: 1,
     padding: 16,
     paddingTop: 10,
-    // backgroundColor: '#FDFBF6',
     backgroundColor: '#EDF8FD',
-    // marginHorizontal:20,
-    fontFamily:'nunito-medium',
-
+    fontFamily: 'nunito-medium',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   titleText: {
-    fontFamily:'nunito-bold',
+    fontFamily: 'nunito-bold',
     fontSize: 28,
-    // color: '#4EA0B7',
     color: '#416FAE',
     textAlign: 'center',
     marginBottom: 30,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   flagButton: {
     position: 'absolute',
@@ -38,43 +44,42 @@ export const commonStyles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#416FAE',
     borderRadius: 30,
     marginBottom: 15,
     paddingLeft: 20,
     paddingRight: 20,
     backgroundColor: '#EEF7FD',
-    borderWidth:2,
-    borderColor:'#416FAE'
+    fontFamily: 'nunito-medium',
   },
   subButton: {
     textAlign: 'center',
     color: '#416FAE',
     marginBottom: 20,
+    fontFamily: 'nunito-medium',
   },
-  mainButtonContainer:{
-    alignItems:'center',
-    textAlign:'center'
+  mainButtonContainer: {
+    alignItems: 'center',
+    textAlign: 'center',
   },
-  buttonContainer:{
-    alignItems:'center',
-    justifyContent:'center',
-    flexDirection:'row',
-    gap:50
+  buttonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 50,
   },
   mainButton: {
     backgroundColor: '#4EA0B7',
-    // backgroundColor:'#416FAE',
     borderRadius: 50,
     height: 45,
-    padding:10,
-    fontSize:18,
-    width:'60%',
+    padding: 10,
+    fontSize: 18,
+    width: '60%',
     textAlign: 'center',
-    marginBottom:10,
+    marginBottom: 10,
   },
-  textMainButton:{
+  textMainButton: {
     textAlign: 'center',
     fontSize: 18,
     color: '#fff',
@@ -84,22 +89,20 @@ export const commonStyles = StyleSheet.create({
     textAlign: 'center',
     color: '#ccc',
     marginVertical: 20,
+    fontFamily: 'nunito-medium',
   },
   googleButton: {
-    // backgroundColor: '#F4E0BB',
     borderRadius: 30,
-    // padding:'5px 5px',
     height: 50,
-    borderWidth:1,
-    borderColor:'#416FAE'
+    borderWidth: 1,
+    borderColor: '#416FAE',
   },
   facebookButton: {
-    // backgroundColor: '#4681C9',
     borderRadius: 8,
-    // height: 50,
   },
   socialButtonText: {
     marginLeft: 10,
+    fontFamily: 'nunito-medium',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -119,5 +122,6 @@ export const commonStyles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 10,
     color: '#000',
+    fontFamily: 'nunito-medium',
   },
 });

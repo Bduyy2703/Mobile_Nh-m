@@ -1,42 +1,64 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput } from "react-native";
+import React from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Dimensions,
+} from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
-import BackgroundImange from './../../assets/images/background.png';
-import HomeIcon from './../../assets/images/home.png';
-import VaccineIcon from './../../assets/images/vaccine.png';
-import MedicalIcon from './../../assets/images/medical.png';
-import CutIcon from './../../assets/images/cut.png';
+import BackgroundImage from "./../../assets/images/background.png";
+import HomeIcon from "./../../assets/images/home.png";
+import VaccineIcon from "./../../assets/images/vaccine.png";
+import MedicalIcon from "./../../assets/images/medical.png";
+import CutIcon from "./../../assets/images/cut.png";
+
+const { width } = Dimensions.get("window");
 
 const SubHeader = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [id, setId] = useState(1);
+
   const handleJoinNow = () => {
-    console.log("Join Now clicked!");
+    console.log("Đã nhấn Tham gia ngay!");
   };
 
-  const handleBooking = async () => {
-    router.push('/screen/details');
-  }
-
   const handleSearchClick = () => {
-    router.push('/screen/search');
+    // Chuyển hướng sang ShopList
+    router.push("/screen/shopList");
+  };
+
+  const handleServicePress = (serviceType, shopId) => {
+    if (shopId) {
+      // Nếu có shopId, chuyển thẳng sang Details
+      router.push({
+        pathname: "/screen/details",
+        params: { id: shopId },
+      });
+    } else {
+      // Nếu không có shopId, chuyển sang ShopList với type (nếu có)
+      router.push({
+        pathname: "/screen/shopList",
+        params: { type: serviceType },
+      });
+    }
+  };
+
+  // Dữ liệu mẫu cho shopId (thay bằng dữ liệu thật từ API nếu có)
+  const serviceShopIds = {
+    hotel: null, // Không có shopId để lấy tất cả shop khi nhấn "Khách sạn"
+    spa: null,
+    vet: null,
+    vaccine: null,
   };
 
   return (
     <View style={styles.subHeaderContainer}>
       <View style={styles.rectangle}>
-        <Image
-          source={BackgroundImange}
-          style={styles.image}
-        />
-        {/* <View style={styles.overlayContainer}>
-          <Text style={styles.communityTitle}>Join The Community</Text>
-          <TouchableOpacity onPress={handleJoinNow} style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Now</Text>
-          </TouchableOpacity>
-        </View> */}
+        <Image source={BackgroundImage} style={styles.image} />
       </View>
 
       <View style={styles.serviceTitleContainer}>
@@ -44,27 +66,48 @@ const SubHeader = () => {
       </View>
 
       <View style={styles.servicesContainer}>
-        <ServiceButton title="Khách sạn" icon={HomeIcon} />
-        <ServiceButton title="Spa & Grooming" icon={CutIcon} />
-        <ServiceButton title="Thú y" icon={MedicalIcon} />
-        <ServiceButton title="Tiêm ngừa" icon={VaccineIcon} />
+        <ServiceButton
+          title={t("hotel", "Khách sạn")}
+          icon={HomeIcon}
+          onPress={() => handleServicePress("hotel", serviceShopIds.hotel)}
+        />
+        <ServiceButton
+          title={t("spa", "Spa & Grooming")}
+          icon={CutIcon}
+          onPress={() => handleServicePress("spa", serviceShopIds.spa)}
+        />
+        <ServiceButton
+          title={t("vet", "Thú y")}
+          icon={MedicalIcon}
+          onPress={() => handleServicePress("vet", serviceShopIds.vet)}
+        />
+        <ServiceButton
+          title={t("vaccine", "Tiêm ngừa")}
+          icon={VaccineIcon}
+          onPress={() => handleServicePress("vaccine", serviceShopIds.vaccine)}
+        />
       </View>
+
       <TouchableOpacity onPress={handleSearchClick} style={styles.searchContainer}>
         <TextInput
-          placeholder="Tìm kiếm cửa hàng"
+          placeholder={t("searchPlaceholder", "Tìm kiếm cửa hàng")}
           style={styles.searchInput}
-          editable={false} 
+          editable={false}
         />
       </TouchableOpacity>
+
       <View style={styles.serviceTitleContainer}>
         <Text style={styles.serviceTitle}>{t("recommend", "Gợi ý")}</Text>
       </View>
-      <View style={styles.shopSection}>
-        <View style={{ flex: 1, alignItems: 'center' }}>
+
+      <TouchableOpacity
+        style={styles.shopSection}
+        onPress={() => router.push("/screen/details")}
+      >
+        <View style={{ flex: 1, alignItems: "center" }}>
           <Image
             source={{ uri: "https://i.imgur.com/1tMFzp8.png" }}
-            resizeMode={'stretch'}
-            imageStyle={styles.view3}
+            resizeMode={"stretch"}
             style={styles.view2}
           />
         </View>
@@ -72,50 +115,42 @@ const SubHeader = () => {
         <View style={styles.column}>
           <View style={styles.row3}>
             <View style={styles.view4}>
-              <Text style={styles.text3}>
-                {"10% Off"}
-              </Text>
+              <Text style={styles.text3}>{"10% Off"}</Text>
             </View>
-            <Text style={styles.text7}>
-              {"4.8"}
-            </Text>
+            <Text style={styles.text7}>{"4.8"}</Text>
           </View>
-          <Text style={styles.text4}>
-            {"KATYB PET CARE"}
-          </Text>
+          <Text style={styles.text4}>{"KATYB PET CARE"}</Text>
           <View style={styles.row4}>
             <Image
               source={{ uri: "https://i.imgur.com/1tMFzp8.png" }}
               resizeMode={"stretch"}
               style={styles.image6}
             />
-            <Text style={styles.text5}>
-              {"Quận 9"}
-            </Text>
+            <Text style={styles.text5}>{"Quận 9"}</Text>
           </View>
-          <Text style={styles.text6}>
-            {"150.000VND/Ngày"}
-          </Text>
+          <Text style={styles.text6}>{"150.000VND/Ngày"}</Text>
         </View>
-
-      </View>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const ServiceButton = ({ title, onPress, icon }) => {
   return (
-    <TouchableOpacity style={styles.serviceButton} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.serviceButton}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.serviceIcon}>
-        <Image style={{ width: 40, height: 40 }} source={icon} />
+        <Image style={styles.serviceIconImage} source={icon} />
       </View>
       <Text style={styles.serviceText}>{title}</Text>
     </TouchableOpacity>
   );
 };
 
-export default SubHeader;
-
+// Style giữ nguyên như bạn đã cung cấp
 const styles = StyleSheet.create({
   subHeaderContainer: {
     justifyContent: "center",
@@ -126,19 +161,19 @@ const styles = StyleSheet.create({
   rectangle: {
     backgroundColor: "#F4A261",
     borderRadius: 20,
-    width: "90%",
+    width: width * 0.9,
     height: 200,
     marginBottom: 20,
     position: "relative",
     overflow: "hidden",
   },
   searchContainer: {
-    width: '80%',
+    width: width * 0.8,
     margin: 20,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 1.0,
-    backgroundColor:'#fff',
+    shadowOpacity: 0.2,
+    backgroundColor: "#fff",
     borderRadius: 30,
     shadowOffset: {
       width: 0,
@@ -148,44 +183,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   searchInput: {
-    backgroundColor: '#fff',
-    width: '100%',
+    backgroundColor: "#fff",
+    width: "100%",
     borderRadius: 20,
     padding: 10,
     fontSize: 16,
   },
   image: {
     width: "100%",
-    height: "110%",
-    position: "absolute", 
+    height: "100%",
+    position: "absolute",
     top: 0,
     left: 0,
     borderRadius: 20,
   },
-  overlayContainer: {
-    position: "absolute", 
-    top: "30%",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  communityTitle: {
-    fontSize: 18,
-    color: "#fff",
-    marginBottom: 10,
-  },
-  joinButton: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 5,
-  },
-  joinButtonText: {
-    color: "#F4A261",
-    fontWeight: "bold",
-  },
   serviceTitleContainer: {
-    width: "90%",
+    width: width * 0.9,
     alignItems: "flex-start",
     marginBottom: 10,
   },
@@ -197,28 +210,32 @@ const styles = StyleSheet.create({
   servicesContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "90%",
+    width: width * 0.9,
     marginTop: 10,
   },
   serviceButton: {
     alignItems: "center",
-    width: 70,
+    width: width * 0.2,
   },
   serviceIcon: {
     width: 60,
     height: 60,
     backgroundColor: "#ddd",
-    flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: "center",
     borderRadius: 30,
-    alignItems: 'center',
+    alignItems: "center",
+  },
+  serviceIconImage: {
+    width: 40,
+    height: 40,
+    resizeMode: "contain",
   },
   serviceText: {
     marginTop: 8,
     textAlign: "center",
     color: "#333",
+    fontSize: 12,
   },
-
   shopSection: {
     flexDirection: "row",
     justifyContent: "center",
@@ -229,10 +246,10 @@ const styles = StyleSheet.create({
     marginBottom: 73,
     marginHorizontal: 15,
     shadowColor: "#000",
-    shadowOpacity: 1.0,
+    shadowOpacity: 0.2,
     shadowOffset: {
       width: 0,
-      height: 4
+      height: 4,
     },
     shadowRadius: 10,
     elevation: 4,
@@ -287,8 +304,6 @@ const styles = StyleSheet.create({
   view2: {
     width: 127,
     height: 108,
-    paddingLeft: 92,
-    paddingRight: 5,
     marginRight: 17,
   },
   view3: {
@@ -305,3 +320,5 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
 });
+
+export default SubHeader;

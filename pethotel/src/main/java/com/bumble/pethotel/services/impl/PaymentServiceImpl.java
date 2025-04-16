@@ -8,6 +8,8 @@ import com.bumble.pethotel.repositories.*;
 import com.bumble.pethotel.services.PaymentService;
 import com.bumble.pethotel.services.UserService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -81,18 +83,30 @@ public class PaymentServiceImpl implements PaymentService {
     }*/
     @Override
     public CheckoutResponseData createPaymentLink(Long bookingId, String returnUrl, String cancelUrl) {
+        // Thêm logger
+        final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
+
+        logger.info("Starting createPaymentLink for bookingId: {}, returnUrl: {}, cancelUrl: {}",
+                bookingId, returnUrl, cancelUrl);
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new PetApiException(HttpStatus.NOT_FOUND, "Booking not found"));
+        logger.info("Found booking: {}", booking);
+
         // Gọi API để tạo yêu cầu thanh toán với PayOS
         String description = "Thanh toán đơn hàng #" + bookingId;
+        logger.info("Payment description: {}", description);
 
         String currentTimeString = String.valueOf(new Date().getTime());
         long orderCode = Long.parseLong(currentTimeString.substring(currentTimeString.length() - 6));
+        logger.info("Generated orderCode: {}", orderCode);
+
         ItemData item = ItemData.builder()
                 .name("Booking #" + bookingId)
                 .quantity(1)
                 .price((int) booking.getTotalPrice())
                 .build();
+        logger.info("Created item: {}", item);
 
         PaymentData paymentData = PaymentData.builder()
                 .orderCode(orderCode)
@@ -102,10 +116,15 @@ public class PaymentServiceImpl implements PaymentService {
                 .cancelUrl(cancelUrl)
                 .item(item)
                 .build();
+        logger.info("Created paymentData: {}", paymentData);
 
         try {
+            logger.info("Calling PayOS to create payment link...");
             CheckoutResponseData checkoutData = payOS.createPaymentLink(paymentData);
+            logger.info("Received checkoutData from PayOS: {}", checkoutData);
+
             String qrCodeUrl = checkoutData.getCheckoutUrl();
+            logger.info("QR Code URL: {}", qrCodeUrl);
 
             Payment payment = new Payment();
             payment.setBooking(booking);
@@ -115,10 +134,15 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setQrCodeUrl(qrCodeUrl);
             payment.setOrderCode(orderCode);
             payment.setDate(LocalDateTime.now());
+            logger.info("Saving payment to database: {}", payment);
+
             paymentRepository.save(payment);
+            logger.info("Payment saved successfully");
+
             return checkoutData;
         } catch (Exception e) {
-            throw new PetApiException(HttpStatus.INTERNAL_SERVER_ERROR,"Lỗi tạo mã QR-Pay");
+            logger.error("Error creating payment link for bookingId: {}", bookingId, e);
+            throw new PetApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi tạo mã QR-Pay");
         }
     }
 

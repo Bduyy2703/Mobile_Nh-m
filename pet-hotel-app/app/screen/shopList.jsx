@@ -8,9 +8,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import API from "../../config/AXIOS_API";
 
 const ShopList = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { type } = useLocalSearchParams(); // Lấy tham số type (nếu có, ví dụ: "hotel")
   const [shops, setShops] = useState([]);
@@ -22,13 +24,19 @@ const ShopList = () => {
         setLoading(true);
         const response = await API.get("/shops");
         if (response.status === 200) {
-          // Nếu có type, lọc danh sách shop theo type (tuỳ chọn)
-          const allShops = response.data;
+          // Lấy dữ liệu từ response.data.content thay vì response.data
+          const allShops = response.data.content || response.data;
+          console.log("All Shops:", allShops); // Log để kiểm tra dữ liệu
+
+          // Lọc danh sách shop dựa trên type (kiểm tra trong mảng services)
           const filteredShops = type
-            ? allShops.filter((shop) => shop.type === type) // Thay shop.type bằng thuộc tính thực tế của API
+            ? allShops.filter((shop) =>
+                shop.services.some((service) => service.type === type)
+              )
             : allShops;
+
           setShops(filteredShops);
-          console.log("Danh sách shop:", filteredShops);
+          console.log("Filtered Shops:", filteredShops); // Log để kiểm tra danh sách đã lọc
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách shop:", error);
@@ -40,6 +48,7 @@ const ShopList = () => {
   }, [type]);
 
   const handleShopPress = (shopId) => {
+    console.log("Navigating to shop details:", shopId); // Log để kiểm tra điều hướng
     router.push({
       pathname: "/screen/details",
       params: { id: shopId },
@@ -53,19 +62,25 @@ const ShopList = () => {
     >
       <Text style={styles.shopName}>{item.name}</Text>
       <Text style={styles.shopAddress}>{item.address}</Text>
+      <Text style={styles.shopDescription}>{item.description}</Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#4EA0B7" />
       ) : (
         <FlatList
           data={shops}
           renderItem={renderShopItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>
+              {t("noShopsForType", "Không có cửa hàng phù hợp với loại dịch vụ này")}
+            </Text>
+          }
         />
       )}
     </View>
@@ -96,10 +111,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
+    fontFamily: "nunito-bold",
   },
   shopAddress: {
     fontSize: 14,
     color: "#7F7F7F",
+    fontFamily: "nunito-medium",
+  },
+  shopDescription: {
+    fontSize: 14,
+    color: "#7F7F7F",
+    fontFamily: "nunito-medium",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#888",
+    textAlign: "center",
+    marginVertical: 20,
+    fontFamily: "nunito-medium",
   },
 });
 

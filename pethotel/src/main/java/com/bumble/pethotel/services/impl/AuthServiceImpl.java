@@ -292,5 +292,32 @@ public class AuthServiceImpl implements AuthService {
 
         return "Password reset successfully!";
     }
+    @Override
+    public String logout(HttpServletRequest request) {
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new PetApiException(HttpStatus.BAD_REQUEST, "Invalid or missing Authorization header");
+        }
 
+        String accessToken = authHeader.substring(7);
+        AccessToken token = accessTokenRepository.findByToken(accessToken);
+        if (token == null) {
+            throw new PetApiException(HttpStatus.BAD_REQUEST, "Invalid access token");
+        }
+
+        User user = token.getUser();
+
+        // Thu hồi tất cả AccessToken của người dùng
+        revokeAllUserAccessTokens(user);
+
+        // Thu hồi RefreshToken liên quan
+        RefreshToken refreshToken = token.getRefreshToken();
+        if (refreshToken != null) {
+            refreshToken.setRevoked(true);
+            refreshToken.setExpired(true);
+            refreshTokenRepository.save(refreshToken);
+        }
+
+        return "Logged out successfully!";
+    }
 }

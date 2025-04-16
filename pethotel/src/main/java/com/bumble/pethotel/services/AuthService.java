@@ -19,4 +19,6 @@ public interface AuthService {
     String resendVerificationCode(String email);
     String forgotPassword(String email);
     String resetPassword(NewPasswordRequest newPasswordRequest);
+    // Thêm phương thức logout
+    String logout(HttpServletRequest request);
 }

@@ -1,28 +1,29 @@
-import React from "react";
-import {
-  ScrollView,
-  Text,
-  StyleSheet,
-  View
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { PaperProvider } from "react-native-paper";
-import TransferInfo from "../../components/Payment/TransferInfo";
-import Header from "../../components/Header/header";
-import { commonStyles } from "../../style";
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { PaperProvider } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import TransferInfo from '../../components/Payment/TransferInfo';
+import Header from '../../components/Header/header';
+import { commonStyles } from '../../style';
 
 const Payment = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { accountName, accountNumber, amount, bin, description, qrCode, orderCode, paymentLinkId, type } = useLocalSearchParams();
 
+  if (!orderCode || !qrCode) {
+    router.push('/home');
+    return null;
+  }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <PaperProvider>
-        <SafeAreaView style={commonStyles.container}>
-          <Header title={"Thanh toán"} />
-          <View>
+    <PaperProvider>
+      <SafeAreaView style={commonStyles.container}>
+        <Header title={t('payment')} />
+        <ScrollView style={commonStyles.containerContent}>
+          <View style={styles.innerContainer}>
             <TransferInfo
               accountName={accountName}
               accountNumber={accountNumber}
@@ -35,20 +36,17 @@ const Payment = () => {
               type={type}
             />
           </View>
-        </SafeAreaView>
-      </PaperProvider>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </PaperProvider>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  innerContainer: {
     padding: 20,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+    backgroundColor: '#FDFBF6',
+    flex: 1,
   },
 });
 

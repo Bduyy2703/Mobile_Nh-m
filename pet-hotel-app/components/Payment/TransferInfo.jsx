@@ -1,26 +1,15 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { ActivityIndicator, Button, Modal, Portal } from "react-native-paper";
-import QRCode from "react-native-qrcode-svg";
-import ViewShot from "react-native-view-shot";
-import { getBanksList } from "../../config/Api";
-import { captureRef } from "react-native-view-shot";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import TransferInfoField from "./TransferInfoField";
-import * as MediaLibrary from "expo-media-library"; // Thêm vào để sử dụng
-import { useRouter } from "expo-router";
-import API from "../../config/AXIOS_API";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Button, Modal, Portal } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
+import ViewShot from 'react-native-view-shot';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import TransferInfoField from './TransferInfoField';
+import * as MediaLibrary from 'expo-media-library';
+import API from '../../config/AXIOS_API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TransferInfo = ({
   accountName,
@@ -31,157 +20,126 @@ const TransferInfo = ({
   qrCode,
   orderCode,
   paymentLinkId,
-  type
+  type,
 }) => {
+  const { t } = useTranslation();
+  const router = useRouter();
   const [bank, setBank] = useState({ logo: undefined, name: undefined });
   const [visible, setVisible] = useState(false);
   const [isPaymentUpdated, setIsPaymentUpdated] = useState(false);
+  const viewShotRef = useRef();
+
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
-  
 
-  const viewShotRef = useRef();
-  const navigation = useNavigation();
-
-  const router = useRouter();
-
-  // Sử dụng MediaLibrary để yêu cầu quyền truy cập ảnh
   const getPermission = async () => {
-    const { isPaymentUpdated } = await MediaLibrary.requestPermissionsAsync();
-    return isPaymentUpdated === "granted";
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    return status === 'granted';
   };
 
   const captureAndSaveImage = async () => {
     try {
-      if (Platform.OS === "android") {
-        const granted = await getPermission();
-        if (!granted) {
-          return;
-        }
+      const granted = await getPermission();
+      if (!granted) {
+        Alert.alert(t('error'), t('permissionDenied'));
+        return;
       }
+
       if (viewShotRef.current) {
         const uri = await captureRef(viewShotRef, {
           fileName: `${accountNumber}_${bin}_${amount}_${orderCode}_Qrcode.png`,
-          format: "png",
+          format: 'png',
           quality: 0.8,
         });
 
-        const asset = await MediaLibrary.createAssetAsync(uri); // Lưu ảnh vào thư viện
+        const asset = await MediaLibrary.createAssetAsync(uri);
         if (asset) {
-          Alert.alert(
-            "",
-            "Image saved successfully.",
-            [{ text: "OK", onPress: () => { } }],
-            { cancelable: false }
-          );
+          Alert.alert(t('success'), t('imageSavedSuccess'));
         }
       }
     } catch (error) {
-      console.error("Error while capturing and saving image:", error);
+      console.error('Error while capturing and saving image:', error);
+      Alert.alert(t('error'), t('imageSaveFailed'));
     }
   };
 
   useEffect(() => {
     (async () => {
       try {
-        const resBank = await getBanksList();
-        if (resBank.code !== "00")
-          throw new Error("Call to getBankList failed");
+        const resBank = await API.get('/banks'); // Giả định endpoint để lấy danh sách ngân hàng
+        if (resBank.status !== 200) {
+          throw new Error('Failed to fetch bank list');
+        }
 
-        const bank = resBank.data.filter((item) => item.bin === bin)[0];
-        setBank((prev) => bank);
+        const bank = resBank.data.data.find((item) => item.bin === bin);
+        setBank(bank || { logo: undefined, name: undefined });
       } catch (error) {
-        Alert.alert(error.message);
+        Alert.alert(t('error'), t('fetchBankFailed'));
       }
     })();
-
-    // socket.emit("joinOrderRoom", orderCode);
-    // console.log("orderCode co gi day",orderCode);
-
-    // socket.on("paymentUpdated", (data) => {
-    //   console.log("data co gi day",data);
-    //   if (data.orderId === orderCode) {
-    //     setIsPaymentUpdated(true);
-    //     socket.emit("leaveOrderRoom", orderCode);
-    //     setTimeout(() => {
-    //       console.log("time out");
-    //       // router.push("screen/resultScreen", { orderCode: orderCode });
-    //       router.push({
-    //         pathname: `screen/success?code=00&id=${paymentLinkId}&cancel=false&status=PAID&orderCode=${orderCode}`,
-    //         params: { orderCode },
-    //       }); // Điều hướng tới SuccessScreen
-    //     }, 3000);
-    //   }
-    // });
-
-    // return () => {
-    //   socket.emit("leaveOrderRoom", orderCode);
-    // };
-  }, []);
+  }, [bin]);
 
   useEffect(() => {
-    let intervalId; // Declare variable to store interval ID
-  
+    let intervalId;
+
     const fetchStatus = async () => {
       try {
-        const response = await API.get(`/payment/${orderCode}`);
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          Alert.alert(t('error'), t('noToken'));
+          router.push('/login');
+          return;
+        }
+
+        const response = await API.get(`/payment/${orderCode}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const statusData = response.data.data;
         let updateStatus;
 
-        if (statusData.status === "PAID") {
-          clearInterval(intervalId); 
-          updateStatus="SUCCESS";
-          handleUpdatePayment(updateStatus);
-          console.log("Type",type);
-          if(type){
-            await AsyncStorage.setItem('isPremium',JSON.stringify(true));
+        if (statusData.status === 'PAID') {
+          clearInterval(intervalId);
+          updateStatus = 'SUCCESS';
+          await handleUpdatePayment(updateStatus);
+          if (type) {
+            await AsyncStorage.setItem('isPremium', JSON.stringify(true));
           }
           router.push({
-            pathname: `screen/success`,
+            pathname: '/screen/success',
             params: { orderCode },
           });
-        } else if (statusData.status === "CANCELLED"){
-          clearInterval(intervalId); 
-          updateStatus="CANCELLED";
-          handleUpdatePayment(updateStatus);
+        } else if (statusData.status === 'CANCELLED') {
+          clearInterval(intervalId);
+          updateStatus = 'CANCELLED';
+          await handleUpdatePayment(updateStatus);
           router.push({
-            pathname: `screen/cancel`,
+            pathname: '/screen/cancel',
             params: { orderCode },
           });
-          console.log(statusData.status);
         }
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching payment status:', error);
+        Alert.alert(t('error'), t('fetchPaymentStatusFailed'));
       }
     };
-  
+
     intervalId = setInterval(fetchStatus, 3000);
-  
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [orderCode]); 
-  
-  
-  
+  }, [orderCode]);
 
-  const cancelOrderHanlde = async () => {
+  const cancelOrderHandle = async () => {
     Alert.alert(
-      "Hủy thanh toán",
-      "Bạn có muốn hủy đơn hàng không?",
+      t('cancelPayment'),
+      t('confirmCancelPayment'),
       [
-        { text: "Hủy bỏ", onPress: () => { } },
-        {
-          text: "Xác nhận",
-          // onPress: () =>
-          //   router.push({
-          //     pathname: "screen/resultScreen",
-          //     params: { orderCode: orderCode, status: "canceled" }
-          //   }),
-          onPress: () => {
-            handleCancel();
-          }, // Điều hướng tới CancelScreen
-        },
+        { text: t('cancel'), onPress: () => {} },
+        { text: t('confirm'), onPress: () => handleCancel() },
       ],
       { cancelable: false }
     );
@@ -189,37 +147,51 @@ const TransferInfo = ({
 
   const handleCancel = async () => {
     try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert(t('error'), t('noToken'));
+        router.push('/login');
+        return;
+      }
 
-      const response = await API.put(`/payment/${orderCode}`);
+      const response = await API.put(`/payment/${orderCode}`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (response.status === 200) {
-        // router.push({
-        //   pathname: `screen/cancel?code=00&id=${paymentLinkId}&cancel=true&status=CANCELLED&orderCode=${orderCode}`,
-        //   params: { orderCode },
-        // });
-        console.log("cancel thanh cong");
-      } else {
-        console.log("cancel that bai");
+        router.push({
+          pathname: '/screen/cancel',
+          params: { orderCode },
+        });
       }
     } catch (error) {
-      console.error("Error while canceling order:", error);
+      console.error('Error while canceling order:', error);
+      Alert.alert(t('error'), t('cancelPaymentFailed'));
     }
   };
 
   const handleUpdatePayment = async (status) => {
-    const token = await AsyncStorage.getItem("token");
     try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert(t('error'), t('noToken'));
+        return;
+      }
+
       const response = await API.put(`/payment/status/${orderCode}?status=${status}`, {}, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      if (response.status === 200) {
-        console.log("Update payment success", response.data);
-      } else {
-        console.log("Update payment failed", response.data);
+
+      if (response.status !== 200) {
+        throw new Error('Failed to update payment status');
       }
     } catch (error) {
-      console.error("Error while updating payment:", error);
+      console.error('Error while updating payment:', error);
+      Alert.alert(t('error'), t('updatePaymentStatusFailed'));
     }
   };
 
@@ -231,10 +203,8 @@ const TransferInfo = ({
           onDismiss={hideModal}
           contentContainerStyle={styles.modal}
         >
-          <Text style={styles.modelText}>
-            Sử dụng một Ứng dụng Ngân hàng bất kỳ để quét mã VietQR
-          </Text>
-          <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.8 }}>
+          <Text style={styles.modelText}>{t('scanQRInstruction')}</Text>
+          <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.8 }}>
             <View style={styles.qrCode}>
               <QRCode value={qrCode} size={200} backgroundColor="transparent" />
             </View>
@@ -246,38 +216,33 @@ const TransferInfo = ({
               style={styles.modalButtonStyle}
               onPress={captureAndSaveImage}
             >
-              Tải về
+              {t('download')}
             </Button>
             <Button
               icon="share"
               mode="outlined"
               style={styles.modalButtonStyle}
-              onPress={() => console.log("Pressed")}
+              onPress={() => console.log('Share pressed')}
             >
-              Chia sẻ
+              {t('share')}
             </Button>
           </View>
         </Modal>
       </Portal>
       <View style={styles.header}>
-        {bank.logo && (
-          <Image source={{ uri: bank?.logo }} style={styles.image} />
-        )}
+        {bank.logo && <Image source={{ uri: bank.logo }} style={styles.image} />}
         <View style={styles.headerRight}>
           {bank.name && <Text style={styles.bankName}>{bank.name}</Text>}
         </View>
       </View>
       <View style={styles.innerContainer}>
-        <TransferInfoField label="Chủ tài khoản" text={accountName} />
-        <TransferInfoField label="Số tài khoản" text={accountNumber} />
-        <TransferInfoField label="Số tiền chuyển khoản" text={amount} />
-        <TransferInfoField label="Nội dung chuyển khoản" text={description} />
-        <Text style={{ textAlign: "center" }}>
-          Mở App Ngân hàng bất kỳ để quét mã VietQR hoặc chuyển khoản chính xác
-          nội dung bên trên
-        </Text>
+        <TransferInfoField label={t('accountHolder')} text={accountName} />
+        <TransferInfoField label={t('accountNumber')} text={accountNumber} />
+        <TransferInfoField label={t('transferAmount')} text={amount} />
+        <TransferInfoField label={t('transferDescription')} text={description} />
+        <Text style={{ textAlign: 'center' }}>{t('scanQRInstruction2')}</Text>
         <Pressable
-          android_ripple={{ color: "#f6f6f6" }}
+          android_ripple={{ color: '#f6f6f6' }}
           style={styles.qrCode}
           onPress={showModal}
         >
@@ -285,41 +250,35 @@ const TransferInfo = ({
         </Pressable>
         <View
           style={{
-            flexDirection: "row",
-            alignContent: "center",
+            flexDirection: 'row',
+            alignContent: 'center',
             gap: 10,
-            justifyContent: "center",
+            justifyContent: 'center',
           }}
         >
           {!isPaymentUpdated && (
             <>
-              <ActivityIndicator
-                size="small"
-                color="#6F4CC1"
-                animating={true}
-              />
-              <Text>Đang chờ thanh toán</Text>
+              <ActivityIndicator size="small" color="#6F4CC1" animating={true} />
+              <Text>{t('waitingForPayment')}</Text>
             </>
           )}
           {isPaymentUpdated && (
             <>
               <FontAwesome name="check" size={20} color="#A4C936" />
-              <Text>Thanh toán thành công</Text>
+              <Text>{t('paymentSuccess')}</Text>
             </>
           )}
         </View>
-
-        <Text style={{ textAlign: "center" }}>
-          Lưu ý: Nhập chính xác nội dung{" "}
-          <Text style={{ fontWeight: "bold" }}>{description}</Text> khi chuyển
-          khoản!
+        <Text style={{ textAlign: 'center' }}>
+          {t('note')}:{' '}
+          <Text style={{ fontWeight: 'bold' }}>{t('enterDescription', { description })}</Text>
         </Text>
         <Button
           mode="contained"
           style={styles.button}
-          onPress={cancelOrderHanlde}
+          onPress={cancelOrderHandle}
         >
-          Hủy thanh toán
+          {t('cancelPayment')}
         </Button>
       </View>
     </View>
@@ -328,23 +287,28 @@ const TransferInfo = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderColor: "grey",
+    borderColor: 'grey',
     borderWidth: 0.2,
     borderRadius: 10,
-    overflow: "hidden",
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: "row",
+    flexDirection: 'row',
     height: 50,
-    // backgroundColor: "rgba( 130, 147, 240, 255)",
     paddingVertical: 5,
     gap: 15,
+    backgroundColor: '#E2D5FB',
   },
   image: {
-    flex: 1,
+    width: 40,
+    height: 40,
+    marginLeft: 10,
   },
   bankName: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 10,
   },
   headerRight: {
     flex: 3,
@@ -354,20 +318,21 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   qrCode: {
-    overflow: "hidden",
+    overflow: 'hidden',
     width: 220,
     height: 220,
     padding: 10,
-    alignSelf: "center",
+    alignSelf: 'center',
     borderRadius: 10,
-    backgroundColor: "#E2D5FB",
+    backgroundColor: '#E2D5FB',
   },
   button: {
     width: 150,
-    alignSelf: "center",
+    alignSelf: 'center',
+    backgroundColor: '#FF4D4F',
   },
   modal: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     margin: 20,
     paddingVertical: 40,
     gap: 20,
@@ -375,12 +340,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 50,
   },
   modelText: {
-    color: "grey",
-    textAlign: "center",
+    color: 'grey',
+    textAlign: 'center',
   },
   modalButton: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   modalButtonStyle: {
     borderWidth: 0.2,

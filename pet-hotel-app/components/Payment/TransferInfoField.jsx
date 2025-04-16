@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Button } from "react-native-paper";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import * as Clipboard from "expo-clipboard";
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as Clipboard from 'expo-clipboard';
 
 const TransferInfoField = ({ label, text }) => {
+  const { t } = useTranslation();
   const [pressed, setPressed] = useState(false);
 
   return (
@@ -27,7 +29,7 @@ const TransferInfoField = ({ label, text }) => {
         {pressed ? (
           <FontAwesome name="check" size={15} color="#6F4CC1" />
         ) : (
-          <Text style={{ fontSize: 12 }}>Sao chép</Text>
+          <Text style={{ fontSize: 12 }}>{t('copy')}</Text>
         )}
       </Button>
     </View>
@@ -36,25 +38,25 @@ const TransferInfoField = ({ label, text }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomColor: "grey",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderBottomColor: 'grey',
     borderBottomWidth: 0.2,
     paddingBottom: 10,
     gap: 5,
   },
   innerContainer: {
-    flexDirection: "column",
+    flexDirection: 'column',
     gap: 2,
     flex: 4,
   },
   button: { right: 0, flex: 1, height: 42 },
   label: {
-    color: "grey",
+    color: 'grey',
     fontSize: 12,
   },
   text: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 13,
   },
 });

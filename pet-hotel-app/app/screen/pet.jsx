@@ -178,12 +178,15 @@ const Pet = () => {
         <SafeAreaView style={commonStyles.container}>
             <View style={styles.imageContainer}>
                 <Image
-                    source={{
-                        uri: selectedPetInfo && selectedPetInfo.imageFile && selectedPetInfo.imageFile.length > 0
-                            ? [...selectedPetInfo.imageFile]
-                                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]?.url
-                            : "https://i.imgur.com/1tMFzp8.png"
-                    }}
+                    source={
+                      {  uri:'https://static-00.iconduck.com/assets.00/qr-scan-icon-512x512-9bsp061y.png'}
+                        // {
+                        //     uri: selectedPetInfo && selectedPetInfo.imageFile && selectedPetInfo.imageFile.length > 0
+                        //         ? [...selectedPetInfo.imageFile]
+                        //             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]?.url
+                        //         : "https://i.imgur.com/1tMFzp8.png"
+                        // }
+                    }
                     resizeMode={'stretch'}
                     style={styles.petImage}
                 />

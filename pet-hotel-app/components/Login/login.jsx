@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import ToggleFlag from '../ToggleButtonLanguage/ToggleButton';
 import BASE from '../../config/AXIOS_BASE';
-import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from "jwt-decode";
 import { doc, setDoc } from 'firebase/firestore'; 
 import { database } from '../../config/firebase';
+import { useNavigation } from '@react-navigation/native';
 const LoginScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();

@@ -140,7 +140,7 @@ const ChatDetailScreen = () => {
     >
       {!item.isSender && isGroup && (
         <Image
-          source={{ uri: item.user.avatar }}
+          source={{ uri: item?.user?.avatar }}
           style={styles.messageAvatar}
         />
       )}
@@ -153,7 +153,7 @@ const ChatDetailScreen = () => {
       </View>
       {item.isSender && isGroup && (
         <Image
-          source={{ uri: item.user.avatar }}
+          source={{ uri: item?.user?.avatar }}
           style={styles.messageAvatar}
         />
       )}

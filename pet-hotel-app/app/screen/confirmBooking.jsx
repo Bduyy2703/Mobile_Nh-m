@@ -171,7 +171,7 @@ const ConfirmBooking = () => {
         <View style={styles.shopSection}>
           <View style={{ flex: 1, alignItems: 'center' }}>
             <ImageBackground
-              source={{ uri: shop?.image || 'https://via.placeholder.com/127x108' }}
+              source={{ uri: shop?.image || 'https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg' }}
               resizeMode="stretch"
               imageStyle={styles.view3}
               style={styles.view2}
@@ -181,7 +181,7 @@ const ConfirmBooking = () => {
             <Text style={styles.text4}>{shop?.name || 'KATYB PET CARE'}</Text>
             <View style={styles.row4}>
               <Image
-                source={{ uri: 'https://via.placeholder.com/11x16' }}
+                source={{ uri: 'https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg' }}
                 resizeMode="stretch"
                 style={styles.image6}
               />

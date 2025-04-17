@@ -21,7 +21,7 @@ export const useWarmUpBrowser = () => {
 WebBrowser.maybeCompleteAuthSession()
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
 
   const handleLogin = () => {
     router.push('screen/login');

@@ -1,13 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, Button, Modal, Portal } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
-import ViewShot from 'react-native-view-shot';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import TransferInfoField from './TransferInfoField';
-import * as MediaLibrary from 'expo-media-library';
 import API from '../../config/AXIOS_API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,60 +21,6 @@ const TransferInfo = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [bank, setBank] = useState({ logo: undefined, name: undefined });
-  const [visible, setVisible] = useState(false);
-  const [isPaymentUpdated, setIsPaymentUpdated] = useState(false);
-  const viewShotRef = useRef();
-
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
-
-  const getPermission = async () => {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    return status === 'granted';
-  };
-
-  const captureAndSaveImage = async () => {
-    try {
-      const granted = await getPermission();
-      if (!granted) {
-        Alert.alert(t('error'), t('permissionDenied'));
-        return;
-      }
-
-      if (viewShotRef.current) {
-        const uri = await captureRef(viewShotRef, {
-          fileName: `${accountNumber}_${bin}_${amount}_${orderCode}_Qrcode.png`,
-          format: 'png',
-          quality: 0.8,
-        });
-
-        const asset = await MediaLibrary.createAssetAsync(uri);
-        if (asset) {
-          Alert.alert(t('success'), t('imageSavedSuccess'));
-        }
-      }
-    } catch (error) {
-      console.error('Error while capturing and saving image:', error);
-      Alert.alert(t('error'), t('imageSaveFailed'));
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const resBank = await API.get('/banks'); // Giả định endpoint để lấy danh sách ngân hàng
-        if (resBank.status !== 200) {
-          throw new Error('Failed to fetch bank list');
-        }
-
-        const bank = resBank.data.data.find((item) => item.bin === bin);
-        setBank(bank || { logo: undefined, name: undefined });
-      } catch (error) {
-        Alert.alert(t('error'), t('fetchBankFailed'));
-      }
-    })();
-  }, [bin]);
 
   useEffect(() => {
     let intervalId;
@@ -197,81 +140,17 @@ const TransferInfo = ({
 
   return (
     <View style={styles.container}>
-      <Portal>
-        <Modal
-          visible={visible}
-          onDismiss={hideModal}
-          contentContainerStyle={styles.modal}
-        >
-          <Text style={styles.modelText}>{t('scanQRInstruction')}</Text>
-          <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.8 }}>
-            <View style={styles.qrCode}>
-              <QRCode value={qrCode} size={200} backgroundColor="transparent" />
-            </View>
-          </ViewShot>
-          <View style={styles.modalButton}>
-            <Button
-              icon="download"
-              mode="outlined"
-              style={styles.modalButtonStyle}
-              onPress={captureAndSaveImage}
-            >
-              {t('download')}
-            </Button>
-            <Button
-              icon="share"
-              mode="outlined"
-              style={styles.modalButtonStyle}
-              onPress={() => console.log('Share pressed')}
-            >
-              {t('share')}
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
-      <View style={styles.header}>
-        {bank.logo && <Image source={{ uri: bank.logo }} style={styles.image} />}
-        <View style={styles.headerRight}>
-          {bank.name && <Text style={styles.bankName}>{bank.name}</Text>}
-        </View>
-      </View>
       <View style={styles.innerContainer}>
         <TransferInfoField label={t('accountHolder')} text={accountName} />
         <TransferInfoField label={t('accountNumber')} text={accountNumber} />
         <TransferInfoField label={t('transferAmount')} text={amount} />
         <TransferInfoField label={t('transferDescription')} text={description} />
-        <Text style={{ textAlign: 'center' }}>{t('scanQRInstruction2')}</Text>
-        <Pressable
-          android_ripple={{ color: '#f6f6f6' }}
-          style={styles.qrCode}
-          onPress={showModal}
-        >
+        <Text style={styles.instructionText}>{t('scanQRInstruction')}</Text>
+        <View style={styles.qrCode}>
           <QRCode value={qrCode} size={200} backgroundColor="transparent" />
-        </Pressable>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignContent: 'center',
-            gap: 10,
-            justifyContent: 'center',
-          }}
-        >
-          {!isPaymentUpdated && (
-            <>
-              <ActivityIndicator size="small" color="#6F4CC1" animating={true} />
-              <Text>{t('waitingForPayment')}</Text>
-            </>
-          )}
-          {isPaymentUpdated && (
-            <>
-              <FontAwesome name="check" size={20} color="#A4C936" />
-              <Text>{t('paymentSuccess')}</Text>
-            </>
-          )}
         </View>
-        <Text style={{ textAlign: 'center' }}>
-          {t('note')}:{' '}
-          <Text style={{ fontWeight: 'bold' }}>{t('enterDescription', { description })}</Text>
+        <Text style={styles.noteText}>
+          {t('note')}: <Text style={{ fontWeight: 'bold' }}>{t('enterDescription', { description })}</Text>
         </Text>
         <Button
           mode="contained"
@@ -293,26 +172,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    height: 50,
-    paddingVertical: 5,
-    gap: 15,
-    backgroundColor: '#E2D5FB',
-  },
-  image: {
-    width: 40,
-    height: 40,
-    marginLeft: 10,
-  },
-  bankName: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginTop: 10,
-  },
-  headerRight: {
-    flex: 3,
-  },
   innerContainer: {
     padding: 20,
     gap: 10,
@@ -331,24 +190,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: '#FF4D4F',
   },
-  modal: {
-    backgroundColor: 'white',
-    margin: 20,
-    paddingVertical: 40,
-    gap: 20,
-    borderRadius: 10,
-    paddingHorizontal: 50,
-  },
-  modelText: {
-    color: 'grey',
+  instructionText: {
     textAlign: 'center',
+    color: 'grey',
+    marginTop: 10,
   },
-  modalButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  modalButtonStyle: {
-    borderWidth: 0.2,
+  noteText: {
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

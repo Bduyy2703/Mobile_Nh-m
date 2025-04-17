@@ -113,7 +113,9 @@ const Details = () => {
 
     await addDoc(collection(database, 'chats'), newMessage);
   };
-
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
   return (
     <SafeAreaView style={styles.container}>
       {loading == true ? (
@@ -229,9 +231,12 @@ const Details = () => {
             <View style={styles.row7}>
               <View style={styles.column5}>
                 <Text style={styles.text9}>{"Tổng giá"}</Text>
-                <Text style={styles.text10}>{"160.000VND /Ngày"}</Text>
+                <Text style={styles.text10}>
+                  {serviceData.length > 0
+                    ? `Giá chỉ từ ${formatPrice(serviceData[0].price)} VND / ngày`
+                    : "Giá không khả dụng"}
+                </Text>
               </View>
-
               <TouchableOpacity onPress={handleBooking} style={styles.view3}>
                 <Text style={styles.text11}>{"Đặt ngay"}</Text>
               </TouchableOpacity>

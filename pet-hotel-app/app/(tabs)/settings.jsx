@@ -35,10 +35,6 @@ const SettingsScreen = () => {
     router.push('/screen/pet');
   };
 
-  const handleChangePassword = () => {
-    router.push('/screen/changePassword');
-  };
-
   const handlePremium = () => {
     router.push('/screen/premium');
   };
@@ -78,11 +74,6 @@ const SettingsScreen = () => {
             <TouchableOpacity onPress={handlePet} style={styles.item}>
               <Ionicons name="paw-outline" size={24} color="#4EA0B7" style={styles.iconContainer} />
               <Text style={styles.itemText}>{t('petManagement')}</Text>
-              <Ionicons name="chevron-forward" size={18} color="#4EA0B7" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleChangePassword} style={styles.item}>
-              <Ionicons name="lock-closed-outline" size={24} color="#4EA0B7" style={styles.iconContainer} />
-              <Text style={styles.itemText}>{t('changePassword')}</Text>
               <Ionicons name="chevron-forward" size={18} color="#4EA0B7" />
             </TouchableOpacity>
             <View style={styles.item}>

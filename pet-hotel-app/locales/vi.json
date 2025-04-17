@@ -169,5 +169,7 @@
   "breedRequired": "Giống loài là bắt buộc",
   "colorRequired": "Màu sắc là bắt buộc",
   "weightMustBePositive": "Cân nặng phải là số dương",
-  "userIdRequired": "ID người dùng là bắt buộc"
+  "userIdRequired": "ID người dùng là bắt buộc",
+  "confirm": "Xác nhận",
+  "cancel": "Hủy"
 }

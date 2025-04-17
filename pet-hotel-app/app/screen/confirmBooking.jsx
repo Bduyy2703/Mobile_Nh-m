@@ -28,11 +28,18 @@ const ConfirmBooking = () => {
     .filter((service) => bookingData?.serviceIds?.includes(service.id))
     .map((service) => service.name);
 
-  const selectedServicePrices = services
-    .filter((service) => bookingData?.serviceIds?.includes(service.id))
-    .map((service) => service.price);
+  const selectedServicePrices = Array.from(
+    new Set(
+      services
+        .filter((service) => bookingData?.serviceIds?.includes(service.id))
+        .map((service) => service.id)
+    )
+  ).map((id) => {
+    const service = services.find((s) => s.id === id);
+    return service.price;
+  });
 
-  const servicePrice = selectedServicePrices.reduce((acc, price) => acc + price, 0);
+  const totalServicePrice = selectedServicePrices.reduce((acc, price) => acc + price, 0) || 0;
 
   useEffect(() => {
     const fetchPremium = async () => {
@@ -60,9 +67,9 @@ const ConfirmBooking = () => {
         const endDate = parsedData.endDate ? moment(parsedData.endDate) : null;
         if (endDate && endDate.isValid()) {
           const dayDiff = endDate.diff(startDate, 'days');
-          setDays(dayDiff);
+          setDays(dayDiff > 0 ? dayDiff : 1); // Đảm bảo ít nhất 1 ngày
         } else {
-          setDays(0);
+          setDays(1); // Mặc định 1 ngày nếu không có endDate
         }
       } else {
         Alert.alert(t('error'), t('noBookingData'));
@@ -151,8 +158,7 @@ const ConfirmBooking = () => {
     }
   };
 
-  const basePrice = bookingData?.totalPrices ? bookingData.totalPrices * days : 0;
-  const totalServicePrice = servicePrice || 0;
+  const basePrice = room?.price ? room.price * days : 0;
   const subtotal = basePrice + totalServicePrice;
   const taxAmount = subtotal * tax;
   const discountAmount = subtotal * discount;

@@ -160,11 +160,13 @@
   "requiredFieldsMissing": "Please fill in all required fields",
   "createPetFailed": "Failed to create pet",
   "petCreated": "Pet created successfully",
-  "nameRequired": "Tên thú cưng là bắt buộc",
-  "genderRequired": "Giới tính là bắt buộc",
-  "petTypeRequired": "Loại thú cưng là bắt buộc",
-  "breedRequired": "Giống loài là bắt buộc",
-  "colorRequired": "Màu sắc là bắt buộc",
+  "nameRequired": "Name is required",
+  "genderRequired": "gender is required",
+  "petTypeRequired": "Pet Type is required",
+  "breedRequired": "Breed is required",
+  "colorRequired": "Color is required",
   "weightMustBePositive": "Cân nặng phải là số dương",
-  "userIdRequired": "ID người dùng là bắt buộc"
+  "userIdRequired": "ID người dùng là bắt buộc",
+  "confirm": "Confirm",
+  "cancel": "Cancel"
   }

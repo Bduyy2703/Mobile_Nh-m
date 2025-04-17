@@ -40,24 +40,26 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderBottomColor: 'grey',
-    borderBottomWidth: 0.2,
-    paddingBottom: 10,
+    paddingVertical: 10,
     gap: 5,
   },
   innerContainer: {
     flexDirection: 'column',
-    gap: 2,
+    gap: 5,
     flex: 4,
   },
-  button: { right: 0, flex: 1, height: 42 },
+  button: {
+    right: 0,
+    flex: 1,
+    height: 42,
+  },
   label: {
     color: 'grey',
-    fontSize: 12,
+    fontSize: 14,
   },
   text: {
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 16,
   },
 });
 

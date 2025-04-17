@@ -9,6 +9,8 @@ import com.bumble.pethotel.services.ReviewService;
 import com.bumble.pethotel.utils.AppConstants;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +20,22 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/reviews")
 public class ReviewController {
+    private static final Logger logger = LoggerFactory.getLogger(ReviewController.class);
     @Autowired
     private ReviewService reviewService;
     @SecurityRequirement(name = "Bear Authentication")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<?> createReview(@Valid @RequestBody ReviewDto reviewDto) {
-        ReviewDto pt = reviewService.saveReview(reviewDto);
-        return new ResponseEntity<>(pt, HttpStatus.CREATED);
+        logger.info("Received request to create review: {}", reviewDto);
+        try {
+            ReviewDto pt = reviewService.saveReview(reviewDto);
+            logger.info("Review created successfully: {}", pt);
+            return new ResponseEntity<>(pt, HttpStatus.CREATED);
+        } catch (Exception e) {
+            logger.error("Error creating review", e);
+            throw e;
+        }
     }
     @GetMapping
     public ReviewsResponse getAllReviews(@RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,

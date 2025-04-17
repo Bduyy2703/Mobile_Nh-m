@@ -13,6 +13,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT p FROM Review p WHERE p.isDelete = false")
     Page<Review> findAllNotDeleted(Pageable pageable);
     Page<Review> findByShopAndIsDeleteFalse(Shop shop, Pageable pageable);
-    Optional<Review> findByUserAndShopAndIsDeleteFalse(User user, Shop shop);
+    List<Review> findByUserAndShopAndIsDeleteFalse(User user, Shop shop);
 
 }

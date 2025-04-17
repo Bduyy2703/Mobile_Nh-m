@@ -34,4 +34,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "ORDER BY b.dateBooking DESC")
     Optional<Booking> findLatestByUserAndShop(@Param("user") User user, @Param("shopId") Long shopId);
     List<Booking> findByEndDateBeforeAndStatus(LocalDate date, String status);
+
+    @Query("SELECT b FROM Booking b " +
+            "LEFT JOIN b.room r " +
+            "WHERE b.user = :user AND (r.shop.id = :shopId OR EXISTS " +
+            "(SELECT cs FROM b.careServices cs WHERE cs.shop.id = :shopId)) " +
+            "AND b.isDelete = false " +
+            "ORDER BY b.dateBooking DESC")
+    List<Booking> findLatestByUserAndShop1(@Param("user") User user, @Param("shopId") Long shopId);
 }

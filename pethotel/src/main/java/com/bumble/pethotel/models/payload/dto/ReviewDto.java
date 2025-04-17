@@ -1,11 +1,8 @@
 package com.bumble.pethotel.models.payload.dto;
 
-import com.bumble.pethotel.models.entity.Shop;
-import com.bumble.pethotel.models.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,8 +14,18 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ReviewDto {
     private Long id;
-    private int rating;
+
+    @NotNull(message = "Rating cannot be null")
+    @Min(value = 1, message = "Rating must be at least 1")
+    @Max(value = 5, message = "Rating must be at most 5")
+    private Integer rating;
+
+    @NotNull(message = "Feedback cannot be null")
     private String feedback;
+
+    @NotNull(message = "User ID cannot be null")
     private Long userId;
+
+    @NotNull(message = "Shop ID cannot be null")
     private Long shopId;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
-import { Button } from 'react-native-paper';
+import { StyleSheet, Text, View, Clipboard, TouchableOpacity } from 'react-native';
+import Modal from 'react-native-modal'; // Thêm Modal
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
@@ -21,6 +21,7 @@ const TransferInfo = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const [isModalVisible, setModalVisible] = useState(false); // Trạng thái cho modal
 
   useEffect(() => {
     let intervalId;
@@ -29,7 +30,7 @@ const TransferInfo = ({
       try {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
-          Alert.alert(t('error'), t('noToken'));
+          console.log('No token found');
           router.push('/login');
           return;
         }
@@ -65,7 +66,7 @@ const TransferInfo = ({
         }
       } catch (error) {
         console.error('Error fetching payment status:', error);
-        Alert.alert(t('error'), t('fetchPaymentStatusFailed'));
+        console.log('Failed to fetch payment status');
       }
     };
 
@@ -77,22 +78,17 @@ const TransferInfo = ({
   }, [orderCode]);
 
   const cancelOrderHandle = async () => {
-    Alert.alert(
-      t('cancelPayment'),
-      t('confirmCancelPayment'),
-      [
-        { text: t('cancel'), onPress: () => {} },
-        { text: t('confirm'), onPress: () => handleCancel() },
-      ],
-      { cancelable: false }
-    );
+    console.log('cancelOrderHandle called');
+    setModalVisible(true); // Hiển thị modal thay vì Alert
   };
 
   const handleCancel = async () => {
+    setModalVisible(false); // Ẩn modal
     try {
+      console.log('Handling cancel request');
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert(t('error'), t('noToken'));
+        console.log('No token found');
         router.push('/login');
         return;
       }
@@ -104,14 +100,17 @@ const TransferInfo = ({
       });
 
       if (response.status === 200) {
+        console.log('Payment canceled successfully');
         router.push({
           pathname: '/screen/cancel',
           params: { orderCode },
         });
+      } else {
+        console.log('Failed to cancel payment, status:', response.status);
       }
     } catch (error) {
       console.error('Error while canceling order:', error);
-      Alert.alert(t('error'), t('cancelPaymentFailed'));
+      console.log('Failed to cancel payment');
     }
   };
 
@@ -119,7 +118,7 @@ const TransferInfo = ({
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert(t('error'), t('noToken'));
+        console.log('No token found');
         return;
       }
 
@@ -134,8 +133,13 @@ const TransferInfo = ({
       }
     } catch (error) {
       console.error('Error while updating payment:', error);
-      Alert.alert(t('error'), t('updatePaymentStatusFailed'));
+      console.log('Failed to update payment status');
     }
+  };
+
+  const copyToClipboard = () => {
+    Clipboard.setString(description);
+    console.log('Copied to clipboard');
   };
 
   return (
@@ -149,17 +153,49 @@ const TransferInfo = ({
         <View style={styles.qrCode}>
           <QRCode value={qrCode} size={200} backgroundColor="transparent" />
         </View>
-        <Text style={styles.noteText}>
-          {t('note')}: <Text style={{ fontWeight: 'bold' }}>{t('enterDescription', { description })}</Text>
-        </Text>
-        <Button
-          mode="contained"
+        <View style={styles.noteContainer}>
+          <Text style={styles.noteText}>
+            {t('note')}: <Text style={styles.boldText}>{t('enterDescription', { description })}</Text>
+          </Text>
+          <TouchableOpacity onPress={copyToClipboard} style={styles.copyButton}>
+            <Text style={styles.copyButtonText}>{t('copy')}</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
           style={styles.button}
-          onPress={cancelOrderHandle}
+          onPress={() => {
+            console.log('Cancel button pressed');
+            cancelOrderHandle();
+          }}
         >
-          {t('cancelPayment')}
-        </Button>
+          <Text style={styles.buttonText}>Hủy thanh toán</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Modal thay thế cho Alert */}
+      <Modal isVisible={isModalVisible}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Cancel Payment</Text>
+          <Text style={styles.modalMessage}>Are you sure you want to cancel this payment?</Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                console.log('Cancel action dismissed');
+                setModalVisible(false);
+              }}
+            >
+              <Text style={styles.modalButtonText}>No</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: '#FF4D4F' }]}
+              onPress={handleCancel}
+            >
+              <Text style={styles.modalButtonText}>Yes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -189,15 +225,79 @@ const styles = StyleSheet.create({
     width: 150,
     alignSelf: 'center',
     backgroundColor: '#FF4D4F',
+    zIndex: 1,
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   instructionText: {
     textAlign: 'center',
     color: 'grey',
     marginTop: 10,
   },
+  noteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
   noteText: {
     textAlign: 'center',
-    marginTop: 10,
+    color: '#FF4D4F',
+    fontSize: 16,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#FF4D4F',
+  },
+  copyButton: {
+    marginLeft: 10,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  copyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '60%',
+  },
+  modalButton: {
+    backgroundColor: '#D3D3D3',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

@@ -10,12 +10,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../components/Header/header";
-import { commonStyles } from "../../style";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import ChatIcon from "./../../assets/images/chat.png";
-import CallIcon from "./../../assets/images/call.png";
 import API from "../../config/AXIOS_API";
 import { addDoc, collection } from "firebase/firestore";
 import { database } from "../../config/firebase";
@@ -25,29 +22,26 @@ const Details = () => {
   const navigation = useNavigation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const [userId, setUserId] = useState(null); 
+  const [userId, setUserId] = useState(null);
   const [fullName, setFullName] = useState(null);
   const [shopData, setShopData] = useState({});
   const [serviceData, setServiceData] = useState([]);
+  const [reviewData, setReviewData] = useState({ averageRating: 0, totalReviews: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem('userId');
-        const name = await AsyncStorage.getItem('fullName');
+        const storedUserId = await AsyncStorage.getItem("userId");
+        const name = await AsyncStorage.getItem("fullName");
         setUserId(storedUserId);
         setFullName(name);
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error("Error fetching user data:", error);
       }
     };
     fetchUserData();
-
   }, [id]);
-
-
-
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -58,41 +52,61 @@ const Details = () => {
           setShopData(response.data);
           console.log("Shop data:", response.data);
         }
-        setLoading(false);
-
       } catch (error) {
         console.error("Error fetching shop data:", error);
       }
     };
-    if (id) {
-      fetchShopData();
-    }
-  }, [id]);
 
-  useEffect(() => {
-    const fetchService = async () => {
+    const fetchReviewData = async () => {
       try {
-        setLoading(true);
+        const response = await API.get(`/reviews/shops/${id}?pageNo=0&pageSize=10&sortBy=id&sortDir=desc`);
+        if (response.status === 200) {
+          const { content, totalElements } = response.data;
+          // Tính averageRating trên frontend
+          const averageRating =
+            content.length > 0
+              ? content.reduce((sum, review) => sum + review.rating, 0) / content.length
+              : 0;
+          setReviewData({
+            averageRating: averageRating,
+            totalReviews: totalElements || 0,
+          });
+          console.log("Review data:", { averageRating, totalElements });
+        }
+      } catch (error) {
+        console.error("Error fetching review data:", error);
+      }
+    };
+
+    const fetchServiceData = async () => {
+      try {
         const response = await API.get(`/services/shops/${id}`);
         if (response.status === 200) {
           setServiceData(response.data.content);
           console.log("Service data:", response.data.content);
         }
-        setLoading(false);
-
       } catch (error) {
         console.error("Error fetching service data:", error);
       }
     };
+
     if (id) {
-      fetchService();
+      Promise.all([fetchShopData(), fetchReviewData(), fetchServiceData()])
+        .finally(() => setLoading(false));
     }
-  }, [id])
+  }, [id]);
 
   const handleBooking = () => {
     router.push({
-      pathname: '/screen/booking',
+      pathname: "/screen/booking",
       params: { id: id },
+    });
+  };
+
+  const handleViewReviews = () => {
+    router.push({
+      pathname: "/screen/reviewList",
+      params: { shopId: id, shopName: shopData.name },
     });
   };
 
@@ -104,147 +118,101 @@ const Details = () => {
       user: {
         _id: userId,
         name: fullName,
-        avatar: 'https://i.pravatar.cc/300'
+        avatar: "https://i.pravatar.cc/300",
       },
       receiver: shopData.userId.toString(),
       _id: Math.random().toString(36),
     };
-    // setInputText('');
-
-    await addDoc(collection(database, 'chats'), newMessage);
+    await addDoc(collection(database, "chats"), newMessage);
+    navigation.navigate("(tabs)", { screen: "chat" });
   };
+
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
+
   return (
     <SafeAreaView style={styles.container}>
-      {loading == true ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+      {loading ? (
+        <ActivityIndicator size="large" color="#4EA0B7" style={styles.loader} />
       ) : (
         <>
           <ScrollView style={styles.scrollView}>
             <ImageBackground
               source={{
-                uri: 
-                shopData && shopData.imageFiles && shopData.imageFiles?.length > 0
-                  ? shopData?.imageFiles
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].url
-                  : 
-                "https://i.imgur.com/1tMFzp8.png"
+                uri:
+                  shopData?.imageFiles?.length > 0
+                    ? shopData.imageFiles
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].url
+                    : "https://i.imgur.com/1tMFzp8.png",
               }}
-              resizeMode={"stretch"}
-              imageStyle={styles.column2}
-              style={styles.column}
+              resizeMode="cover"
+              imageStyle={styles.coverImage}
+              style={styles.coverContainer}
             >
-              <View style={styles.row}>
-                <TouchableOpacity
-                  onPress={() => {
-                    router.back();
-                  }}
-                >
-                  <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
-              </View>
-            </ImageBackground>
-            <View style={styles.shopName}>
-              <View style={styles.column3}>
-                <Text style={styles.text2}>
-                  {shopData.name} {/* call name */}
-                </Text>
-                <View style={styles.row5}>
-                  <Text style={styles.text3}>
-                    {shopData.address} {/* call address */}
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  flex: 1,
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  backgroundColor: "#4EA0B7",
-                  borderRadius: 20,
-                  width: 35,
-                  height: 35,
-                  alignItems: "center",
-                }}
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={styles.backButton}
               >
-                <TouchableOpacity onPress={async () => {
-                  await sendMessage();
-                  //  router.push('/screen/chatMessage');
-                  navigation.navigate('(tabs)', { screen: 'chat' })
-                }
-                }>
-                  <Image
-                    source={ChatIcon}
-                    resizeMode={"stretch"}
-                    style={styles.image8}
-                  />
-                </TouchableOpacity>
+                <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+            </ImageBackground>
 
+            <View style={styles.shopInfo}>
+              <View style={styles.shopDetails}>
+                <Text style={styles.shopNameText}>{shopData.name}</Text>
+                <Text style={styles.shopAddressText}>{shopData.address}</Text>
               </View>
-
-              {/* <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              backgroundColor: "#4EA0B7",
-              borderRadius: 20,
-              width: 35,
-              height: 35,
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={CallIcon}
-              resizeMode={"stretch"}
-              style={styles.image9}
-            />
-          </View> */}
-            </View>
-            <View style={styles.row6}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.text4}>{"4.0"}</Text>
-              </View>
-              <View style={styles.view2}>
-                <Text style={styles.text4}>+200 nhận xét</Text>
-              </View>
-            </View>
-            <Text style={styles.text5}>{"Mô tả"}</Text>
-            <Text style={styles.text6}>
-              {shopData.description} {/* call description */}
-            </Text>
-            <Text style={styles.text7}>{"Các dịch vụ khác"}</Text>
-            {serviceData.length > 0 ? (
-              serviceData.map((service, index) => (
-                <Text key={index} style={styles.text8}>
-                  {service.name}{" "}
-                  {/* Adjust this property name based on your API response */}
-                </Text>
-              ))
-            ) : (
-              <Text style={styles.text8}>{"No services available"}</Text>
-            )}
-          </ScrollView>
-          <View>
-            <View style={styles.row7}>
-              <View style={styles.column5}>
-                <Text style={styles.text9}>{"Tổng giá"}</Text>
-                <Text style={styles.text10}>
-                  {serviceData.length > 0
-                    ? `Giá chỉ từ ${formatPrice(serviceData[0].price)} VND / ngày`
-                    : "Giá không khả dụng"}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={handleBooking} style={styles.view3}>
-                <Text style={styles.text11}>{"Đặt ngay"}</Text>
+              <TouchableOpacity onPress={sendMessage} style={styles.chatButton}>
+                <Image source={ChatIcon} resizeMode="contain" style={styles.chatIcon} />
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity onPress={handleViewReviews} style={styles.ratingContainer}>
+              <View style={styles.ratingWrapper}>
+                <Ionicons name="star" size={20} color="#FFD700" style={styles.starIcon} />
+                <Text style={styles.ratingText}>{reviewData.averageRating.toFixed(1)}</Text>
+              </View>
+              <Text style={styles.reviewsText}>
+                {reviewData.totalReviews > 0
+                  ? `${reviewData.totalReviews} nhận xét`
+                  : "Chưa có nhận xét"}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Mô tả</Text>
+            <Text style={styles.descriptionText}>{shopData.description || "Chưa có mô tả."}</Text>
+
+            <Text style={styles.sectionTitle}>Các dịch vụ</Text>
+            {serviceData.length > 0 ? (
+              serviceData.map((service, index) => (
+                <View key={index} style={styles.serviceItem}>
+                  <Text style={styles.serviceText}>{service.name}</Text>
+                  <Text style={styles.servicePrice}>
+                    {formatPrice(service.price)} VND / ngày
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noServiceText}>Chưa có dịch vụ nào.</Text>
+            )}
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.priceLabel}>Tổng giá</Text>
+              <Text style={styles.priceText}>
+                {serviceData.length > 0
+                  ? `Từ ${formatPrice(serviceData[0].price)} VND / ngày`
+                  : "Giá không khả dụng"}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleBooking} style={styles.bookButton}>
+              <Text style={styles.bookButtonText}>Đặt ngay</Text>
+            </TouchableOpacity>
           </View>
         </>
       )}
-
     </SafeAreaView>
   );
 };
@@ -252,256 +220,178 @@ const Details = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F5F7FA",
   },
-  absoluteBox: {
-    position: "absolute",
-    bottom: -2,
-    right: 115,
-    width: 151,
-    height: 10,
-    backgroundColor: "#C3D7DD",
-    borderRadius: 10,
-  },
-  box: {
-    height: 7,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 1,
-    marginTop: 2,
-  },
-  box2: {
-    width: 1,
-    height: 4,
-    backgroundColor: "#FFFFFF",
-  },
-  box3: {
+  loader: {
     flex: 1,
-    alignSelf: "stretch",
-  },
-  column: {
-    height: 387,
-    paddingVertical: 18,
-    marginBottom: 35,
-  },
-  column2: {
-    borderRadius: 15,
-  },
-  column3: {
-    flex: 8,
-    marginRight: 4,
-  },
-  column4: {
-    flex: 1,
-  },
-  column5: {
-    flex: 1,
-    alignSelf: "flex-start",
-    marginTop: 7,
-    marginRight: 4,
-  },
-  image: {
-    width: 17,
-    height: 10,
-    marginRight: 5,
-  },
-  image2: {
-    width: 15,
-    height: 11,
-    marginRight: 6,
-  },
-  image3: {
-    width: 30,
-    height: 30,
-  },
-  image4: {
-    width: 30,
-    height: 30,
-    marginRight: 5,
-  },
-  image5: {
-    width: 13,
-    height: 13,
-  },
-  image6: {
-    width: 5,
-    height: 7,
-    marginRight: 9,
-  },
-  image7: {
-    width: 33,
-    height: 33,
-    marginRight: 14,
-  },
-  image8: {
-    width: 30,
-    height: 30,
-    // marginRight: 13,
-  },
-  image9: {
-    width: 30,
-    height: 30,
-  },
-  image10: {
-    width: 15,
-    height: 14,
-    marginRight: 7,
-  },
-  image11: {
-    width: 23,
-    height: 23,
-  },
-  image12: {
-    height: 23,
-    marginHorizontal: 11,
-  },
-  row: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 29,
-    marginHorizontal: 15,
-  },
-  row2: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 267,
-    marginHorizontal: 27,
-  },
-  row3: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 148,
-  },
-  shopName: {
-    flexDirection: "row",
-    // justifyContent: 'space-evenly',
-    gap: 5,
-    alignItems: "center",
-    marginBottom: 13,
-    marginHorizontal: 16,
-  },
-  row5: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  row6: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E3EFFC",
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-    marginBottom: 17,
-    marginHorizontal: 39,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  row7: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    // borderColor: "#000",
-    // borderWidth: 1,
-    paddingTop: 10,
-    paddingBottom: 21,
-    paddingHorizontal: 24,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
   },
-  text: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    marginRight: 4,
-    flex: 1,
+  coverContainer: {
+    height: 300,
+    padding: 16,
   },
-  text2: {
-    color: "#000000",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 1,
+  coverImage: {
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  text3: {
-    color: "#7F7F7F",
-    fontSize: 12,
-    flex: 1,
-  },
-  text4: {
-    color: "#5399BD",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  text5: {
-    color: "#000000",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-    marginLeft: 20,
-  },
-  text6: {
-    color: "#7F7F7F",
-    fontSize: 15,
-    marginBottom: 16,
-    marginHorizontal: 18,
-    width: 354,
-  },
-  text7: {
-    color: "#000000",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 7,
-    marginLeft: 17,
-  },
-  text8: {
-    color: "#7F7F7F",
-    fontSize: 16,
-    marginBottom: 8,
-    marginHorizontal: 25,
-    width: 340,
-  },
-  text9: {
-    color: "#000000",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 6,
-    marginLeft: 3,
-  },
-  text10: {
-    color: "#000000",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  text11: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  view: {
-    width: 22,
-    borderColor: "#FFFFFF",
-    borderRadius: 2,
-    borderWidth: 1,
-    paddingHorizontal: 2,
-    marginRight: 1,
-  },
-  view2: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  view3: {
-    width: 160,
+  backButton: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: 50,
+    padding: 8,
     alignSelf: "flex-start",
+  },
+  shopInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  shopDetails: {
+    flex: 1,
+  },
+  shopNameText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    marginBottom: 4,
+  },
+  shopAddressText: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  chatButton: {
+    backgroundColor: "#4EA0B7",
+    borderRadius: 50,
+    padding: 10,
+  },
+  chatIcon: {
+    width: 24,
+    height: 24,
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#E8F0FE",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  ratingWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  starIcon: {
+    marginRight: 8,
+  },
+  ratingText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#4EA0B7",
+  },
+  reviewsText: {
+    fontSize: 14,
+    color: "#4EA0B7",
+    fontWeight: "600",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  descriptionText: {
+    fontSize: 15,
+    color: "#666666",
+    lineHeight: 22,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  serviceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  serviceText: {
+    fontSize: 16,
+    color: "#1A1A1A",
+    fontWeight: "500",
+  },
+  servicePrice: {
+    fontSize: 14,
+    color: "#4EA0B7",
+    fontWeight: "600",
+  },
+  noServiceText: {
+    fontSize: 15,
+    color: "#666666",
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 4,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+  },
+  bookButton: {
     backgroundColor: "#4EA0B7",
     borderRadius: 30,
-    paddingVertical: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    alignItems: "center",
+  },
+  bookButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
 });
+
 export default Details;

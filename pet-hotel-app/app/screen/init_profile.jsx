@@ -166,7 +166,7 @@ const InitProfileScreen = () => {
 
     try {
       console.log("Sending FormData to create pet with fetch");
-      const response = await fetch("http://192.168.50.89:9090/api/v1/pets", {
+      const response = await fetch("http://192.168.41.175:9090/api/v1/pets", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

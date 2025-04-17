@@ -17,7 +17,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const config = {
-  baseURL: 'http://192.168.50.89:9090/api/v1',
+  baseURL: 'http://192.168.41.175:9090/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

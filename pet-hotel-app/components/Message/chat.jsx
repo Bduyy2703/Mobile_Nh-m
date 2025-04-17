@@ -12,21 +12,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { collection, addDoc, orderBy, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
-import { database } from '../../config/firebase'; // Import Firestore config
+import { collection, addDoc, orderBy, query, onSnapshot, where, updateDoc, doc } from 'firebase/firestore';
+import { database } from '../../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment'; // Thêm moment để định dạng thời gian
 
 const ChatDetailScreen = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [userId, setUserId] = useState(null); // Lấy userId từ AsyncStorage
-  const [fullName, setFullName] = useState(null); // Lấy userId từ AsyncStorage
-  const [receiverId, setReceiverId] = useState(null); // Lấy receiverId
+  const [userId, setUserId] = useState(null);
+  const [fullName, setFullName] = useState(null);
+  const [receiverId, setReceiverId] = useState(null);
+  const [isGroup, setIsGroup] = useState(false);
   const route = useRoute();
   const navigation = useNavigation();
   const { contact } = route.params;
-
-  const [receiver, setReceiver] = useState({});
 
   // Lấy thông tin userId và receiverId
   useEffect(() => {
@@ -35,46 +35,74 @@ const ChatDetailScreen = () => {
         const storedUserId = await AsyncStorage.getItem('userId');
         const name = await AsyncStorage.getItem('fullName');
         setUserId(storedUserId);
-        setReceiverId(contact.id);
         setFullName(name);
+        setReceiverId(contact.id);
+        setIsGroup(contact.isGroup || false);
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
     };
     fetchUserData();
-
   }, [contact]);
-
 
   // Lấy dữ liệu tin nhắn từ Firebase
   useEffect(() => {
     if (!userId || !receiverId) return;
 
-    const collectionRef = collection(database, 'chats');
-    const q = query(collectionRef, orderBy('createdAt', 'desc'));
+    let q;
+    if (isGroup) {
+      // Nếu là nhóm chat, lấy tin nhắn dựa trên receiver (ID của nhóm)
+      q = query(
+        collection(database, 'chats'),
+        where('receiver', '==', receiverId),
+        orderBy('createdAt', 'asc')
+      );
+    } else {
+      // Nếu là trò chuyện cá nhân, lấy tin nhắn dựa trên sender và receiver
+      q = query(
+        collection(database, 'chats'),
+        where('sender', 'in', [userId, receiverId]),
+        where('receiver', 'in', [userId, receiverId]),
+        orderBy('createdAt', 'asc')
+      );
+    }
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      setMessages(
-        querySnapshot.docs
-          .map(doc => doc.data())
-          .filter(
-            message =>
-              (message.sender === userId && message.receiver === receiverId) ||
-              (message.sender === receiverId && message.receiver === userId)
-          )
-          .map(doc => ({
-            id: doc._id,
-            text: doc.text,
-            time: doc.createdAt.toDate().toLocaleTimeString(),
-            isSender: doc.sender === userId,
-          }))
-      );
+      const messagesData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id, // Sử dụng ID của document để cập nhật trạng thái đọc
+          text: data.text,
+          time: moment(data.createdAt.toDate()).calendar(),
+          isSender: data.sender === userId,
+          sender: data.sender,
+          user: data.user,
+          read: data.read || false,
+        };
+      });
+
+      setMessages(messagesData);
+
+      // Đánh dấu các tin nhắn chưa đọc là đã đọc
+      const unreadMessages = querySnapshot.docs.filter(doc => {
+        const data = doc.data();
+        return !data.read && data.sender !== userId;
+      });
+
+      unreadMessages.forEach(async (doc) => {
+        try {
+          await updateDoc(doc.ref, { read: true });
+        } catch (error) {
+          console.error('Error marking message as read:', error);
+        }
+      });
+    }, (error) => {
+      console.error('Error fetching messages:', error);
     });
 
-    return unsubscribe;
-  }, [userId, receiverId]);
+    return () => unsubscribe();
+  }, [userId, receiverId, isGroup]);
 
-  console.log("asd",messages);
   // Gửi tin nhắn
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -86,14 +114,20 @@ const ChatDetailScreen = () => {
       user: {
         _id: userId,
         name: fullName,
-        avatar: 'https://i.pravatar.cc/300'
+        avatar: 'https://i.pravatar.cc/300',
       },
       receiver: receiverId,
       _id: Math.random().toString(36),
+      read: false,
+      isGroup: isGroup,
     };
     setInputText('');
 
-    await addDoc(collection(database, 'chats'), newMessage);
+    try {
+      await addDoc(collection(database, 'chats'), newMessage);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   // Render từng tin nhắn
@@ -104,8 +138,25 @@ const ChatDetailScreen = () => {
         item.isSender ? styles.sender : styles.receiver,
       ]}
     >
-      <Text style={styles.messageText}>{item.text}</Text>
-      <Text style={styles.messageTime}>{item.time}</Text>
+      {!item.isSender && isGroup && (
+        <Image
+          source={{ uri: item.user.avatar }}
+          style={styles.messageAvatar}
+        />
+      )}
+      <View style={styles.messageContent}>
+        {isGroup && !item.isSender && (
+          <Text style={styles.senderName}>{item.user.name}</Text>
+        )}
+        <Text style={styles.messageText}>{item.text}</Text>
+        <Text style={styles.messageTime}>{item.time}</Text>
+      </View>
+      {item.isSender && isGroup && (
+        <Image
+          source={{ uri: item.user.avatar }}
+          style={styles.messageAvatar}
+        />
+      )}
     </View>
   );
 
@@ -113,14 +164,22 @@ const ChatDetailScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={25} />
+          <Ionicons name="arrow-back" size={25} color="#1A1A1A" />
         </TouchableOpacity>
-        <Image source={{ uri: contact.avatar }} style={styles.avatar} />
-        <View style={styles.headerContent}>
-          <Text style={styles.name}>{contact.name}</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.headerContent}
+          onPress={() => navigation.navigate("screen/profileChat", { contact })}
+        >
+          <Image source={{ uri: contact.avatar }} style={styles.avatar} />
+          <View style={styles.headerText}>
+            <Text style={styles.name}>{contact.name}</Text>
+            {!isGroup && (
+              <Text style={styles.onlineStatus}>Online</Text>
+            )}
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("screen/profileChat", { contact })}>
-          <AntDesign name="infocirlce" size={24} color="black" />
+          <AntDesign name="infocirlce" size={24} color="#4EA0B7" />
         </TouchableOpacity>
       </View>
 
@@ -133,15 +192,17 @@ const ChatDetailScreen = () => {
       />
 
       <View style={styles.inputContainer}>
-        <Ionicons name="image-outline" size={25} color="#7F7F7F" />
+        <TouchableOpacity>
+          <Ionicons name="image-outline" size={25} color="#7F7F7F" />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
-          placeholder="Aa"
+          placeholder="Type a message..."
           value={inputText}
           onChangeText={setInputText}
         />
         <TouchableOpacity onPress={sendMessage}>
-          <Ionicons name="send" size={25} color="#68A7AD" />
+          <Ionicons name="send" size={25} color="#4EA0B7" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -151,14 +212,25 @@ const ChatDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5F7FA",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 15,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
     width: 40,
@@ -167,58 +239,84 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginLeft: 15,
   },
-  headerContent: {
+  headerText: {
     flex: 1,
   },
   name: {
     fontSize: 16,
     fontWeight: "bold",
-    color: '#222',
+    color: "#1A1A1A",
   },
   onlineStatus: {
     fontSize: 12,
-    color: "#7F7F7F",
+    color: "#4EA0B7",
+    fontWeight: "500",
   },
   chatContainer: {
     flex: 1,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   messageContainer: {
-    maxWidth: "75%",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    maxWidth: "80%",
     marginVertical: 5,
-    padding: 10,
-    borderRadius: 10,
   },
   sender: {
     alignSelf: "flex-end",
-    backgroundColor: "#DCF8C6",
   },
   receiver: {
     alignSelf: "flex-start",
+  },
+  messageAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginHorizontal: 5,
+  },
+  messageContent: {
+    padding: 10,
+    borderRadius: 15,
     backgroundColor: "#E0E0E0",
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#4EA0B7",
+    marginBottom: 5,
   },
   messageText: {
     fontSize: 16,
+    color: "#1A1A1A",
   },
   messageTime: {
     fontSize: 10,
     color: "#7F7F7F",
     alignSelf: "flex-end",
+    marginTop: 5,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 8,
+    elevation: 3,
   },
   input: {
     flex: 1,
     marginHorizontal: 10,
     borderRadius: 20,
     paddingHorizontal: 20,
-    paddingVertical: 5,
+    paddingVertical: 10,
     backgroundColor: "#F1F1F1",
+    fontSize: 16,
   },
 });
 

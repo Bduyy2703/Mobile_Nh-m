@@ -164,7 +164,7 @@ const UpdatePetScreen = () => {
 
     try {
       console.log("Sending request to update pet with ID:", params.id);
-      const response = await fetch(`http://192.168.50.89:9090/api/v1/pets/${params.id}`, {
+      const response = await fetch(`http://192.168.41.175:9090/api/v1/pets/${params.id}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

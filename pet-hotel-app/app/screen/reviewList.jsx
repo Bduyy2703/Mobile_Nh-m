@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, 
 import { useLocalSearchParams } from 'expo-router';
 import API from '../../config/AXIOS_API';
 import { Ionicons } from '@expo/vector-icons';
+import Header from "../../components/Header/header";
 
 export default () => {
     const { shopId } = useLocalSearchParams();
@@ -80,6 +81,7 @@ export default () => {
 
     return (
         <SafeAreaView style={styles.container}>
+                  <Header title="Đánh giá cửa hàng"/>
             <View style={styles.header}>
                 <Text style={styles.title}>Đánh giá cửa hàng</Text>
             </View>

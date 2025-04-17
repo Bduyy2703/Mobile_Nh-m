@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import API from '../../config/AXIOS_API';
 import { Ionicons } from '@expo/vector-icons';
+import Header from "../../components/Header/header";
 
 export default () => {
     const { bookingId } = useLocalSearchParams();
@@ -180,8 +181,10 @@ export default () => {
     }
 
     return (
+  
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView}>
+            <Header title="Thông tin đặt phòng"/>
                 <View style={styles.header}>
                     <Image
                         source={{ uri: shop?.imageFiles?.[0]?.url || "https://i.imgur.com/1tMFzp8.png" }}

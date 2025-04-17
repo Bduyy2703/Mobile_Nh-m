@@ -11,6 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import API from "../../config/AXIOS_API";
+import Header from "../../components/Header/header";
 
 const ShopList = () => {
   const { t } = useTranslation();
@@ -108,6 +109,7 @@ const ShopList = () => {
 
   return (
     <View style={styles.container}>
+      <Header title="Shop" />
       {loading ? (
         <ActivityIndicator size="large" color="#4EA0B7" />
       ) : (

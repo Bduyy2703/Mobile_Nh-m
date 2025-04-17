@@ -117,6 +117,25 @@ export default function RootLayout() {
           headerShown: false,
         }}
       />
+
+      <Stack.Screen
+        name="screen/shopList"
+        options={{
+          headerShown: false,
+        }}
+      />
+            <Stack.Screen
+        name="screen/reviewList"
+        options={{
+          headerShown: false,
+        }}
+      />
+            <Stack.Screen
+        name="screen/bookingDetails"
+        options={{
+          headerShown: false,
+        }}
+      />
       <Stack.Screen
         name="screen/message"
         options={{

@@ -1,192 +1,258 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router'; // Thêm useRouter để điều hướng
 import Header from '../../components/Header/header';
 import { commonStyles } from '../../style';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../config/AXIOS_API';
 
 const Schedule = () => {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const [status, setStatus] = useState(1); // 1: PENDING, 2: SUCCESS
-  const [userId, setUserId] = useState(null);
-  const [bookings, setBookings] = useState([]);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+    const router = useRouter(); // Khởi tạo router để điều hướng
+    const [status, setStatus] = useState(1); // Default to 'Pending'
+    const [userId, setUserId] = useState(null);
+    const [bookings, setBookings] = useState([]);
+    const [page, setPage] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-  const pageSize = 10;
-  const sortBy = 'dateBooking';
-  const sortDir = 'desc';
+    const pageSize = 10;
+    const sortBy = 'dateBooking';
+    const sortDir = 'desc';
 
-  useEffect(() => {
-    const fetchUserId = async () => {
-      const storedUserId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-      if (!storedUserId || !token) {
-        Alert.alert(t('error'), t('notLoggedIn'));
-        router.push('/login');
-        return;
-      }
-      setUserId(storedUserId);
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const userIdcc = await AsyncStorage.getItem('userId');
+            setUserId(userIdcc);
+        };
+
+        fetchUserId();
+    }, []);
+
+    const fetchData = async (newPage = 1, reset = false) => {
+        if (!userId || loading) return;
+        setLoading(true);
+
+        try {
+            const endpoint = status === 1
+                ? `bookings/pending/users/${userId}`
+                : `bookings/completed/users/${userId}`;
+
+            const response = await API.get(`${endpoint}?pageNo=${newPage}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`);
+
+            if (response.status === 200) {
+                const newBookings = response.data.content;
+                setBookings(prevBookings => reset ? newBookings : [...prevBookings, ...newBookings]);
+                setHasMore(newBookings.length > 0);
+            }
+        } catch (error) {
+            console.error('Error fetching bookings', error);
+        }
+
+        setLoading(false);
     };
-    fetchUserId();
-  }, []);
 
-  const fetchData = async (newPage = 0, reset = false) => {
-    if (!userId || loading) return;
-    setLoading(true);
+    useEffect(() => {
+        if (userId) {
+            fetchData(0, true);
+        }
+    }, [userId]);
 
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const endpoint = status === 1
-        ? `bookings/pending/users/${userId}`
-        : `bookings/completed/users/${userId}`;
+    useEffect(() => {
+        if (userId) {
+            setBookings([]);
+            fetchData(0, true);
+        }
+    }, [status]);
 
-      const response = await API.get(`${endpoint}?pageNo=${newPage}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const loadMoreData = () => {
+        if (!loading && hasMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchData(nextPage);
+        }
+    };
 
-      if (response.status === 200) {
-        const newBookings = response.data.content;
-        setBookings(prevBookings => reset ? newBookings : [...prevBookings, ...newBookings]);
-        setHasMore(newBookings.length === pageSize);
-        setPage(newPage);
-      }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      Alert.alert(t('error'), t('fetchBookingsFailed'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        setPage(1);
+        await fetchData(0, true);
+        setRefreshing(false);
+    };
 
-  useEffect(() => {
-    if (userId) {
-      fetchData(0, true);
-    }
-  }, [userId]);
+    const formatPrice = (price) => {
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
 
-  useEffect(() => {
-    if (userId) {
-      setBookings([]);
-      fetchData(0, true);
-    }
-  }, [status]);
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
 
-  const loadMoreData = () => {
-    if (!loading && hasMore) {
-      fetchData(page + 1);
-    }
-  };
+    const handleBookingPress = (booking) => {
+        // Điều hướng đến màn hình Booking Details và truyền thông tin booking
+        router.push({
+            pathname: '/screen/bookingDetails',
+            params: {
+                bookingId: booking.id,
+                shopName: booking.shopName,
+                type: booking.type,
+                dateBooking: booking.dateBooking,
+                totalPrice: booking.totalPrice,
+            },
+        });
+    };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    setPage(0);
-    setHasMore(true);
-    await fetchData(0, true);
-    setRefreshing(false);
-  };
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => router.push(`/screen/booking/${item.id}`)}
-    >
-      <Image
-        source={{ uri: item.shopImage || 'https://i.imgur.com/1tMFzp8.png' }}
-        resizeMode={'stretch'}
-        style={styles.image}
-      />
-      <View style={{ marginLeft: 15, flex: 1 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold', fontFamily: 'nunito-bold' }}>{item.shopName}</Text>
-        <Text style={styles.textItem}>
-          {t('use')}: {item.type === '1' ? t('room') : item.type === '2' ? t('service') : t('roomAndService')}
-        </Text>
-        <Text style={styles.textItem}>
-          {t('bookedOn')}: {new Date(item.dateBooking).toLocaleString()}
-        </Text>
-        <Text style={styles.textItem}>
-          {t('totalPrice')}: {item.totalPrice} VNĐ
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  return (
-    <SafeAreaView style={commonStyles.container}>
-      <Header title={t('trackSchedule')} />
-      <View style={styles.statusBar}>
+    const renderItem = ({ item }) => (
         <TouchableOpacity
-          onPress={() => setStatus(1)}
-          style={[styles.statusBtn, { backgroundColor: status === 1 ? '#555' : '#fff' }]}
+            style={styles.item}
+            onPress={() => handleBookingPress(item)} // Thêm sự kiện onPress để điều hướng
         >
-          <Text style={{ color: status === 1 ? '#fff' : '#000' }}>{t('pending')}</Text>
+            <Image
+                source={{ uri: "https://i.imgur.com/1tMFzp8.png" }}
+                resizeMode={"cover"}
+                style={styles.image}
+            />
+            <View style={styles.itemContent}>
+                <Text style={styles.shopName}>{item.shopName}</Text>
+                <Text style={styles.textItem}>
+                    Sử dụng: {item.type === "1" ? "Phòng" : item.type === "2" ? "Dịch vụ" : "Phòng, dịch vụ"}
+                </Text>
+                <Text style={styles.textItem}>Đặt hàng: {formatDate(item.dateBooking)}</Text>
+                <Text style={styles.textItem}>Tổng tiền: {formatPrice(item.totalPrice)} VND</Text>
+            </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setStatus(2)}
-          style={[styles.statusBtn, { backgroundColor: status === 2 ? '#555' : '#fff' }]}
-        >
-          <Text style={{ color: status === 2 ? '#fff' : '#000' }}>{t('success')}</Text>
-        </TouchableOpacity>
-      </View>
+    );
 
-      <FlatList
-        data={bookings}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
-        onEndReached={loadMoreData}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loading && <ActivityIndicator size="large" color="#4EA0B7" />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        ListEmptyComponent={<Text style={styles.emptyText}>{t('noBookings')}</Text>}
-      />
-    </SafeAreaView>
-  );
+    return (
+        <SafeAreaView style={commonStyles.container}>
+            <Header title={"Theo dõi lịch"} />
+            <View style={styles.statusBar}>
+                <TouchableOpacity
+                    onPress={() => setStatus(1)}
+                    style={[
+                        styles.statusBtn,
+                        status === 1 ? styles.statusBtnActive : styles.statusBtnInactive,
+                    ]}
+                >
+                    <Text style={status === 1 ? styles.statusTextActive : styles.statusTextInactive}>
+                        PENDING
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => setStatus(2)}
+                    style={[
+                        styles.statusBtn,
+                        status === 2 ? styles.statusBtnActive : styles.statusBtnInactive,
+                    ]}
+                >
+                    <Text style={status === 2 ? styles.statusTextActive : styles.statusTextInactive}>
+                        SUCCESS
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            <FlatList
+                data={bookings}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => `${item.id}-${index}`}
+                onEndReached={loadMoreData}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={loading && <ActivityIndicator size="large" color="#4EA0B7" />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#4EA0B7']}
+                    />
+                }
+                contentContainerStyle={styles.listContainer}
+            />
+        </SafeAreaView>
+    );
 };
 
 const styles = StyleSheet.create({
-  statusBar: {
-    margin: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  statusBtn: {
-    padding: 10,
-    borderRadius: 10,
-  },
-  item: {
-    flexDirection: 'row',
-    margin: 20,
-    backgroundColor: '#F0F6FD',
-    borderRadius: 10,
-    padding: 10,
-  },
-  image: {
-    borderRadius: 12,
-    width: 100,
-    height: 100,
-    marginRight: 12,
-  },
-  textItem: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'nunito-medium',
-  },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#888',
-    marginTop: 20,
-    fontFamily: 'nunito-medium',
-  },
+    statusBar: {
+        margin: 20,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 15,
+    },
+    statusBtn: {
+        width: 120,
+        borderRadius: 20,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    statusBtnActive: {
+        backgroundColor: '#4EA0B7',
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    statusBtnInactive: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+    },
+    statusTextActive: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    statusTextInactive: {
+        color: '#2D2D2D',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    listContainer: {
+        paddingHorizontal: 15,
+        paddingBottom: 20,
+    },
+    item: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        marginVertical: 8,
+        padding: 15,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    image: {
+        borderRadius: 12,
+        width: 100,
+        height: 100,
+        marginRight: 12,
+    },
+    itemContent: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    shopName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2D2D2D',
+        marginBottom: 5,
+    },
+    textItem: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginBottom: 3,
+    },
 });
 
 export default Schedule;

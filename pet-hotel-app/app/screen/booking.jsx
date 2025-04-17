@@ -145,7 +145,7 @@ const Booking = () => {
 
   const fetchSign = async () => {
     try {
-      const response = await API. get(`/rooms/available/shops/${id}`);
+      const response = await API.get(`/rooms/available/shops/${id}`);
       if (response.status === 200) {
         setSigns(response.data);
       }
@@ -216,6 +216,10 @@ const Booking = () => {
       console.error('Error saving booking data:', error);
       Alert.alert(t('error'), t('saveBookingFailed'));
     }
+  };
+
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
   return (
@@ -328,21 +332,40 @@ const Booking = () => {
           <View style={styles.row11}>
             <Text style={styles.txtPet}>{t('additionalServices')}</Text>
           </View>
-          <View style={{ flexDirection: 'row', margin: 20 }}>
+          <View style={styles.servicesContainer}>
             <FlatList
               data={serviceList}
               keyExtractor={(item) => item.id.toString()}
-              horizontal
+              numColumns={3} // Hiển thị 4 dịch vụ trên mỗi hàng
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.dayContainer, { backgroundColor: isSelectedService(item) ? '#4EA0B7' : '#fff' }]}
+                  style={[
+                    styles.serviceItem,
+                    { backgroundColor: isSelectedService(item) ? '#4EA0B7' : '#fff' },
+                  ]}
                   onPress={() => handleSelectServices(item)}
                 >
-                  <Text style={{ color: isSelectedService(item) ? '#fff' : '#000' }}>{item.name}</Text>
-                  <Text style={{ color: isSelectedService(item) ? '#fff' : '#000' }}>{item.price}</Text>
+                  <Text
+                    style={[
+                      styles.serviceText,
+                      { color: isSelectedService(item) ? '#fff' : '#000' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.servicePrice,
+                      { color: isSelectedService(item) ? '#fff' : '#000' },
+                    ]}
+                  >
+                    {formatPrice(item.price)} VND
+                  </Text>
                 </TouchableOpacity>
               )}
-              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.serviceList}
             />
           </View>
         </View>
@@ -440,27 +463,24 @@ const styles = StyleSheet.create({
   dateGui: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center', // Căn giữa theo chiều dọc
     marginBottom: 15,
     marginHorizontal: 15,
   },
   rowNgayGui: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 33,
+    marginHorizontal: 15,
   },
   dateTra: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center', // Căn giữa theo chiều dọc
     marginBottom: 15,
     marginHorizontal: 15,
   },
   rowNgayTra: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 28,
+    marginHorizontal: 15,
   },
   choosePet: {
     flexDirection: 'row',
@@ -471,13 +491,13 @@ const styles = StyleSheet.create({
   row11: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
     marginHorizontal: 14,
   },
   dateTitle: {
     color: '#000000',
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 14,
     flex: 2,
   },
   txtPet: {
@@ -486,6 +506,40 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: 4,
     flex: 2,
+  },
+  servicesContainer: {
+    marginHorizontal: 14,
+    marginBottom: 12,
+  },
+  serviceList: {
+    justifyContent: 'space-between', // Đảm bảo các item phân bố đều
+  },
+  serviceItem: {
+    width: '30%', // Chia đều cho 4 cột (100% / 4 - khoảng cách)
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    margin: '1.5%', // Khoảng cách giữa các item
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  serviceText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  servicePrice: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
   },
   inputNote: {
     backgroundColor: '#FFFFFF',

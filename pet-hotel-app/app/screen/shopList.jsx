@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -14,7 +15,7 @@ import API from "../../config/AXIOS_API";
 const ShopList = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { type } = useLocalSearchParams(); // Lấy tham số type (nếu có, ví dụ: "hotel")
+  const { type } = useLocalSearchParams();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,11 +25,9 @@ const ShopList = () => {
         setLoading(true);
         const response = await API.get("/shops");
         if (response.status === 200) {
-          // Lấy dữ liệu từ response.data.content thay vì response.data
           const allShops = response.data.content || response.data;
-          console.log("All Shops:", allShops); // Log để kiểm tra dữ liệu
+          console.log("All Shops:", allShops);
 
-          // Lọc danh sách shop dựa trên type (kiểm tra trong mảng services)
           const filteredShops = type
             ? allShops.filter((shop) =>
                 shop.services.some((service) => service.type === type)
@@ -36,7 +35,7 @@ const ShopList = () => {
             : allShops;
 
           setShops(filteredShops);
-          console.log("Filtered Shops:", filteredShops); // Log để kiểm tra danh sách đã lọc
+          console.log("Filtered Shops:", filteredShops);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách shop:", error);
@@ -48,23 +47,64 @@ const ShopList = () => {
   }, [type]);
 
   const handleShopPress = (shopId) => {
-    console.log("Navigating to shop details:", shopId); // Log để kiểm tra điều hướng
+    console.log("Navigating to shop details:", shopId);
     router.push({
       pathname: "/screen/details",
       params: { id: shopId },
     });
   };
 
-  const renderShopItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.shopItem}
-      onPress={() => handleShopPress(item.id)}
-    >
-      <Text style={styles.shopName}>{item.name}</Text>
-      <Text style={styles.shopAddress}>{item.address}</Text>
-      <Text style={styles.shopDescription}>{item.description}</Text>
-    </TouchableOpacity>
-  );
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const renderShopItem = ({ item }) => {
+    // Lấy ảnh từ imageFiles
+    const shopImage =
+      item.imageFiles && item.imageFiles.length > 0
+        ? item.imageFiles[0].url
+        : "https://i.imgur.com/1tMFzp8.png";
+
+    // Tìm giá thấp nhất từ services
+    const lowestPrice = item.services.length > 0
+      ? Math.min(...item.services.map((service) => service.price))
+      : null;
+
+    // Lấy danh sách các loại dịch vụ duy nhất
+    const serviceTypes = [...new Set(item.services.map((service) => service.type))];
+
+    return (
+      <TouchableOpacity
+        style={styles.shopItem}
+        onPress={() => handleShopPress(item.id)}
+      >
+        <Image
+          source={{ uri: shopImage }}
+          style={styles.shopImage}
+          resizeMode="cover"
+        />
+        <View style={styles.shopInfo}>
+          <Text style={styles.shopName}>{item.name}</Text>
+          <Text style={styles.shopAddress}>{item.address}</Text>
+          <Text style={styles.shopDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+          <View style={styles.serviceTypesContainer}>
+            {serviceTypes.map((type, index) => (
+              <Text key={index} style={styles.serviceType}>
+                {type}
+              </Text>
+            ))}
+          </View>
+          {lowestPrice !== null && (
+            <Text style={styles.shopPrice}>
+              Giá từ {formatPrice(lowestPrice)} VND
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -90,38 +130,75 @@ const ShopList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f8f8",
-    padding: 10,
+    backgroundColor: "#F5F6F5", // Màu nền nhẹ nhàng
+    padding: 15,
   },
   list: {
     paddingBottom: 20,
   },
   shopItem: {
-    backgroundColor: "#fff",
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    marginVertical: 8,
     padding: 15,
-    marginVertical: 5,
-    borderRadius: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 5, // Hiệu ứng bóng cho Android
+  },
+  shopImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 15,
+    backgroundColor: "#E0E0E0", // Màu nền tạm thời khi ảnh đang tải
+  },
+  shopInfo: {
+    flex: 1,
+    justifyContent: "center",
   },
   shopName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#2D2D2D",
     fontFamily: "nunito-bold",
+    marginBottom: 5,
   },
   shopAddress: {
     fontSize: 14,
-    color: "#7F7F7F",
+    color: "#6B7280",
     fontFamily: "nunito-medium",
+    marginBottom: 5,
   },
   shopDescription: {
     fontSize: 14,
-    color: "#7F7F7F",
+    color: "#6B7280",
     fontFamily: "nunito-medium",
+    marginBottom: 8,
+  },
+  serviceTypesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 8,
+  },
+  serviceType: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    backgroundColor: "#4EA0B7", // Màu nền cho loại dịch vụ
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginRight: 6,
+    marginBottom: 6,
+    fontFamily: "nunito-medium",
+  },
+  shopPrice: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#4EA0B7",
+    fontFamily: "nunito-bold",
   },
   emptyText: {
     fontSize: 16,

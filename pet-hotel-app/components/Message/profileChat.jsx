@@ -134,7 +134,14 @@ const ProfileChat = () => {
         <Entypo name="dots-three-vertical" size={24} color="#1A1A1A" />
       </View>
       <View style={styles.subheader}>
-        <Image source={{ uri: contact.avatar }} style={styles.avatar} />
+        <Image
+          source={{
+            uri: typeof contact.avatar === 'string' && contact.avatar
+              ? contact.avatar
+              : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+          }}
+          style={styles.avatar}
+        />
         <Text style={styles.name}>{contact.name}</Text>
       </View>
       <View style={styles.icon}>

@@ -86,7 +86,7 @@ export default () => {
                 <Text style={styles.title}>Đánh giá cửa hàng</Text>
             </View>
             {loading && pageNo === 0 ? (
-                <ActivityIndicator size="large" color="#4EA0B7" style={{ marginTop: 20 }} />
+                <ActivityIndicator size={30} color="#4EA0B7" style={{ marginTop: 20 }} />
             ) : reviews.length === 0 ? (
                 <Text style={styles.noReviews}>Chưa có đánh giá nào</Text>
             ) : (
@@ -99,7 +99,7 @@ export default () => {
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={
                         loading && hasMore ? (
-                            <ActivityIndicator size="small" color="#4EA0B7" style={{ marginVertical: 20 }} />
+                            <ActivityIndicator size={20} color="#4EA0B7" style={{ marginVertical: 20 }} />
                         ) : null
                     }
                 />

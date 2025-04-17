@@ -111,7 +111,7 @@ const ShopList = () => {
     <View style={styles.container}>
       <Header title="Shop" />
       {loading ? (
-        <ActivityIndicator size="large" color="#4EA0B7" />
+        <ActivityIndicator size={30} color="#4EA0B7" />
       ) : (
         <FlatList
           data={shops}

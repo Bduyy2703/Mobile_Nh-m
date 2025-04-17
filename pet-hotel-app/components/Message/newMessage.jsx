@@ -109,7 +109,14 @@ const NewMessageScreen = () => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.friendItem} onPress={() => startChat(item)}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <Image
+        source={{
+          uri: typeof contact.avatar === 'string' && contact.avatar
+            ? contact.avatar
+            : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+        }}
+        style={styles.avatar}
+      />
       <Text style={styles.friendName}>{item.name}</Text>
     </TouchableOpacity>
   );

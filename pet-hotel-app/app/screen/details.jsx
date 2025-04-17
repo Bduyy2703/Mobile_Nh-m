@@ -134,7 +134,7 @@ const Details = () => {
   return (
     <SafeAreaView style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#4EA0B7" style={styles.loader} />
+        <ActivityIndicator size={30} color="#4EA0B7" style={styles.loader} />
       ) : (
         <>
           <ScrollView style={styles.scrollView}>

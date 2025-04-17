@@ -35,9 +35,6 @@ const SettingsScreen = () => {
     router.push('/screen/pet');
   };
 
-  const handleChangePassword = () => {
-    router.push('/screen/changePassword');
-  };
 
   const handlePremium = () => {
     router.push('/screen/premium');
@@ -65,7 +62,7 @@ const SettingsScreen = () => {
     <SafeAreaView style={commonStyles.container}>
       <Header title={t('setting')} />
       {loading ? (
-        <ActivityIndicator size="large" color="#4EA0B7" />
+        <ActivityIndicator size={30} color="#4EA0B7" />
       ) : (
         <View style={commonStyles.containerContent}>
           <View style={styles.section}>

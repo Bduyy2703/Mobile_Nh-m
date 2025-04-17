@@ -107,7 +107,14 @@ const Notify = () => {
       onPress={() => handleNotificationPress(item)}
     >
       <View style={styles.iconContainer}>
-        <Image source={{ uri: item.icon }} style={styles.icon} />
+     <Image
+              source={{
+                uri: typeof contact.icon === 'string' && contact.icon
+                  ? contact.icon
+                  : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+              }}
+              style={styles.avatar}
+            />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>

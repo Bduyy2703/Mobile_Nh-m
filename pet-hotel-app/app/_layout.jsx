@@ -100,12 +100,6 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
-        name="screen/changePassword"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="screen/forgotPassword"
         options={{
           headerShown: false,
@@ -257,17 +251,12 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
-        name="screen/update_pet"
+        name="screen/updatePet"
         options={{
           headerShown: false,
         }}
       />
-      <Stack.Screen
-        name="screen/chatMessage"
-        options={{
-          headerShown: false,
-        }}
-      />
+
     </Stack>
   );
 }

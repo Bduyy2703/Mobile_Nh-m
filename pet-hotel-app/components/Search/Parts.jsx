@@ -36,7 +36,7 @@ export default function Parts() {
   const renderHotelItem = ({ item }) => (
     <TouchableOpacity onPress={handleBooking} >
       <View style={styles.container}>
-        <Image source={item.image} style={styles.image} />
+        {/* <Image source={item.image} style={styles.image} /> */}
         <View>
           <Text style={styles.title}>{item.name}</Text>
           <View style={styles.ratingContainer}>

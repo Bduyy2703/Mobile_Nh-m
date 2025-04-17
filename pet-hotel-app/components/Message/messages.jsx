@@ -169,7 +169,13 @@ const MessageScreen = () => {
         }
       })}
     >
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <Image source={{
+        uri: typeof item.avatar === 'string' && item.avatar
+          ? item.avatar
+          : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+      }}
+        style={styles.avatar}
+      />
       <View style={styles.messageContent}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.message} numberOfLines={1} ellipsizeMode="tail">

@@ -167,7 +167,7 @@ export default () => {
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <ActivityIndicator size="large" color="#4EA0B7" style={{ marginTop: 50 }} />
+                <ActivityIndicator size={30} color="#4EA0B7" style={{ marginTop: 50 }} />
             </SafeAreaView>
         );
     }

@@ -140,8 +140,8 @@ export default function SearchResult() {
             items={[
               { label: "Small (0-5 kg)", value: "0-5" },
               { label: "Medium (5-15 kg)", value: "5-15" },
-              { label: "Large (15-30 kg)", value: "15-30" },
-              { label: "Extra Large (30+ kg)", value: "30+" },
+              { label: "30 (15-30 kg)", value: "15-30" },
+              { label: "Extra 30 (30+ kg)", value: "30+" },
             ]}
             style={pickerSelectStyles}
             placeholder={{

@@ -165,7 +165,7 @@ const Schedule = () => {
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 onEndReached={loadMoreData}
                 onEndReachedThreshold={0.5}
-                ListFooterComponent={loading && <ActivityIndicator size="large" color="#4EA0B7" />}
+                ListFooterComponent={loading && <ActivityIndicator size={30} color="#4EA0B7" />}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}

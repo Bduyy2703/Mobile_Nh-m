@@ -171,7 +171,7 @@ const Home = () => {
           return null;
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        ListFooterComponent={loading && <ActivityIndicator size="large" color="#4EA0B7" />}
+        ListFooterComponent={loading && <ActivityIndicator size={30} color="#4EA0B7" />}
       />
     </SafeAreaView>
   );

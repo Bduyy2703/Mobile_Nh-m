@@ -198,7 +198,10 @@ const InitProfileScreen = () => {
         <View style={styles.uploadGroup}>
           <TouchableOpacity onPress={requestPermission} style={styles.avatarContainer}>
             {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.avatar} />
+             <Image
+             source={{ uri: typeof imageUri === 'string' ? imageUri : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg" }}
+             style={styles.avatar}
+           />
             ) : (
               <Image
                 source={require("./../../assets/images/icons8-camera-50.png")}

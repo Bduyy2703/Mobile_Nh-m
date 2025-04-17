@@ -123,7 +123,14 @@ const CreateGroupScreen = () => {
       if (!friend) return null;
       return (
         <View key={friend.id} style={styles.selectedFriend}>
-          <Image source={{ uri: friend.avatar }} style={styles.avatarSmall} />
+          <Image
+            source={{
+              uri: typeof contact.avatar === 'string' && contact.avatar
+                ? contact.avatar
+                : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+            }}
+            style={styles.avatar}
+          />
           <Text style={styles.selectedFriendName}>{friend.name}</Text>
           <TouchableOpacity onPress={() => toggleSelectFriend(friend.id)}>
             <Text style={styles.removeIcon}>X</Text>
@@ -159,7 +166,13 @@ const CreateGroupScreen = () => {
               style={styles.friendItem}
               onPress={() => toggleSelectFriend(item.id)}
             >
-              <Image source={{ uri: item.avatar }} style={styles.avatar} />
+              <Image source={{
+                uri: typeof item.avatar === 'string' && item.avatar
+                  ? item.avatar
+                  : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+              }}
+                style={styles.avatar}
+              />
               <Text style={styles.friendName}>{item.name}</Text>
               {selectedFriends.includes(item.id) ? (
                 <Text style={styles.selectedIcon}>✓</Text>

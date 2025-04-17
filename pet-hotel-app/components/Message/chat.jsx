@@ -170,7 +170,14 @@ const ChatDetailScreen = () => {
           style={styles.headerContent}
           onPress={() => navigation.navigate("screen/profileChat", { contact })}
         >
-          <Image source={{ uri: contact.avatar }} style={styles.avatar} />
+          <Image
+            source={{
+              uri: typeof contact.avatar === 'string' && contact.avatar
+                ? contact.avatar
+                : "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg"
+            }}
+            style={styles.avatar}
+          />
           <View style={styles.headerText}>
             <Text style={styles.name}>{contact.name}</Text>
             {!isGroup && (

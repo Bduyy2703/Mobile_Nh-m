@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, Image, ScrollView, Dimensions, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import React from "react";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function Sliders() {
   return (

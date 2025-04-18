@@ -27,19 +27,16 @@ const SubHeader = () => {
   };
 
   const handleSearchClick = () => {
-    // Chuyển hướng sang ShopList
     router.push("/screen/shopList");
   };
 
   const handleServicePress = (serviceType, shopId) => {
     if (shopId) {
-      // Nếu có shopId, chuyển thẳng sang Details
       router.push({
         pathname: "/screen/details",
         params: { id: shopId },
       });
     } else {
-      // Nếu không có shopId, chuyển sang ShopList với type (nếu có)
       router.push({
         pathname: "/screen/shopList",
         params: { type: serviceType },
@@ -47,9 +44,8 @@ const SubHeader = () => {
     }
   };
 
-  // Dữ liệu mẫu cho shopId (thay bằng dữ liệu thật từ API nếu có)
   const serviceShopIds = {
-    hotel: null, // Không có shopId để lấy tất cả shop khi nhấn "Khách sạn"
+    hotel: null, 
     spa: null,
     vet: null,
     vaccine: null,
@@ -150,7 +146,6 @@ const ServiceButton = ({ title, onPress, icon }) => {
   );
 };
 
-// Style giữ nguyên như bạn đã cung cấp
 const styles = StyleSheet.create({
   subHeaderContainer: {
     justifyContent: "center",

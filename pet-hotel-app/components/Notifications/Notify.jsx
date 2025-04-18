@@ -1,26 +1,25 @@
-import React, { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
   Image,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { database } from "../../config/firebase";
 import { commonStyles } from "../../style";
 import Header from "../Header/header";
-import { collection, query, onSnapshot, orderBy, updateDoc, doc } from "firebase/firestore";
-import { database } from "../../config/firebase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Notify = () => {
   const navigation = useNavigation();
   const [notifications, setNotifications] = useState([]);
   const [userId, setUserId] = useState(null);
 
-  // Lấy userId từ AsyncStorage
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -33,7 +32,6 @@ const Notify = () => {
     fetchUserData();
   }, []);
 
-  // Lấy danh sách thông báo từ Firestore
   useEffect(() => {
     if (!userId) return;
     const q = query(
@@ -63,9 +61,7 @@ const Notify = () => {
     return () => unsubscribe();
   }, [userId]);
 
-  // Xử lý khi nhấn vào thông báo
   const handleNotificationPress = async (notification) => {
-    // Đánh dấu thông báo là đã đọc
     try {
       await updateDoc(doc(database, "notifications", notification.id), {
         read: true,
@@ -74,7 +70,6 @@ const Notify = () => {
       console.error("Error marking notification as read:", error);
     }
 
-    // Điều hướng theo loại thông báo
     switch (notification.type) {
       case "order_update":
         navigation.navigate("screen/orderDetails", { orderId: notification.targetId });

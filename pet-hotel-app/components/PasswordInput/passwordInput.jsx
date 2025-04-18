@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';  
+import { TextInput, TouchableOpacity, View } from 'react-native';
 import { commonStyles } from '../../style';
 
 export const PasswordInput = ({placeholder, onPasswordChange}) => {

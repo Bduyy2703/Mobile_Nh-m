@@ -1,30 +1,8 @@
-import { View, Text, Image, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import React, { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-
-const hotels = [
-  {
-    id: 1,
-    name: "Hotel 1",
-    location: "District 9, HCMC",
-    price: "300.000 VND",
-    rating: 4,
-    reviews: 20,
-    image: require("./../../assets/images/hotel.jpg"),
-  },
-  {
-    id: 2,
-    name: "Hotel 2",
-    location: "District 1, HCMC",
-    price: "500.000 VND",
-    rating: 5,
-    reviews: 50,
-    image: require("./../../assets/images/hotel.jpg"),
-  },
-];
-
 
 export default function Parts() {
   const [isSelected, setIsSelected] = useState(1);
@@ -67,30 +45,7 @@ export default function Parts() {
         <Text style={{fontSize:16}}>
           Recommend
         </Text>
-        {/* <TouchableOpacity onPress={() => setIsSelected(1)} style={[
-          styles.buttonType,
-          { backgroundColor: isSelected !== 1 ? '#CECECF' : '#4EA0B7' },
-        ]}>
-          <Text style={{ color: 'white' }}>Pet Hotel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsSelected(2)} style={[
-          styles.buttonType,
-          { backgroundColor: isSelected !== 2 ? '#CECECF' : '#4EA0B7' }
-        ]}>
-          <Text style={{ color: 'white' }}>Pet Spa</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsSelected(3)} style={[
-          styles.buttonType,
-          { backgroundColor: isSelected !== 3 ? '#CECECF' : '#4EA0B7' }
-        ]}>
-          <Text style={{ color: 'white' }}>Phong kham</Text>
-        </TouchableOpacity> */}
       </View>
-      {/* <FlatList
-        data={hotels}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderHotelItem}
-      /> */}
     </View>
   );
 }

@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function Header() {
   const [search, setSearch] = useState("");

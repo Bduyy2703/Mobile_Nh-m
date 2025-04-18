@@ -1,24 +1,18 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
+  Alert,
+  Image,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  StatusBar,
-  StyleSheet,
-  Image,
-  Alert,
-  ScrollView,
+  View
 } from "react-native";
-import axios from "axios";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import BASE from "../../config/AXIOS_BASE";
 import { commonStyles } from "../../style";
 import { PasswordInput } from "../PasswordInput/passwordInput";
-import googleIcon from "../../assets/images/icons8-google-48.png";
-import facebookIcon from "../../assets/images/icons8-facebook-48.png";
-import { useTranslation } from "react-i18next";
-import BASE from "../../config/AXIOS_BASE";
 
 const SignUpScreen = () => {
   const router = useRouter();
@@ -36,21 +30,6 @@ const SignUpScreen = () => {
       Alert.alert("Validation Error", "All fields are required.");
       return;
     }
-
-    // if (!validateEmail(email)) {
-    //   Alert.alert("Validation Error", "Please enter a valid email address.");
-    //   return;
-    // }
-
-    // if (!validatePhoneNumber(phone)) {
-    //   Alert.alert("Validation Error", "Please enter a valid phone number.");
-    //   return;
-    // }
-
-    // if (password.length < 6) {
-    //   Alert.alert("Validation Error", "Password should be at least 6 characters long.");
-    //   return;
-    // }
 
     if (password !== confirmPassword) {
       Alert.alert("Password Mismatch", "Passwords do not match!");
@@ -74,7 +53,6 @@ const SignUpScreen = () => {
       const response = await BASE.post("/register", registerPayload);
       if (response.status === 201) {
         Alert.alert("Signup Successful", "Please check your email for verification.");
-        // Redirect to the verification screen
         router.push(`/screen/verify?email=${encodeURIComponent(email)}`);
 
       }
@@ -94,7 +72,6 @@ const SignUpScreen = () => {
 
   return (
     <ScrollView style={commonStyles.containerContent}>
-      {/* <StatusBar barStyle="dark-content" /> */}
       <View style={{ width: '100%', alignItems: 'center' }}>
       <Image
           source={require('./../../assets/images/logo.png')}
@@ -147,15 +124,6 @@ const SignUpScreen = () => {
           <Text style={commonStyles.textMainButton}>{t("createButton")}</Text>
         </TouchableOpacity>
       </View>
-      {/* <Text style={commonStyles.orText}>________________________________________</Text>
-      <View style={commonStyles.buttonContainer}>
-        <TouchableOpacity style={commonStyles.googleButton} onPress={() => {}}>
-          <Image source={googleIcon} style={{ width: 50, height: 50 }} />
-        </TouchableOpacity> */}
-        {/* <TouchableOpacity style={commonStyles.facebookButton} onPress={() => {}}>
-          <Image source={facebookIcon} style={{ width: 50, height: 50 }} />
-        </TouchableOpacity> */}
-      {/* </View> */}
     </ScrollView>
   );
 };

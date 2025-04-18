@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import React from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router'; 
+import { useRouter } from 'expo-router';
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const Header = ({ title }) => {
   const router = useRouter();
@@ -28,7 +28,6 @@ const styles = StyleSheet.create({
   notificationContainer: {
     flexDirection: 'row',
     backgroundColor: "#4EA0B7",
-    // backgroundColor: "#416FAE",
     justifyContent: "space-between", 
     alignItems: "center", 
     borderBottomLeftRadius: 20, 
@@ -41,6 +40,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     marginRight:20
-    // flex:
   },
 });

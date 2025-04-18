@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { addDoc, collection, onSnapshot, query } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  TextInput,
   FlatList,
-  Text,
-  TouchableOpacity,
   Image,
   StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../Header/header";
-import { commonStyles } from "../../style";
-import { collection, query, onSnapshot, addDoc } from "firebase/firestore";
 import { database } from "../../config/firebase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { commonStyles } from "../../style";
+import Header from "../Header/header";
 
 const NewMessageScreen = () => {
   const navigation = useNavigation();
@@ -24,7 +24,6 @@ const NewMessageScreen = () => {
   const [userId, setUserId] = useState(null);
   const [fullName, setFullName] = useState(null);
 
-  // Lấy userId và fullName từ AsyncStorage
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -39,14 +38,12 @@ const NewMessageScreen = () => {
     fetchUserData();
   }, []);
 
-  // Lấy danh sách người dùng từ Firestore
   useEffect(() => {
     const q = query(collection(database, "users"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const usersData = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // Loại bỏ chính người dùng hiện tại
         if (doc.id !== userId) {
           usersData.push({
             id: doc.id,
@@ -63,12 +60,10 @@ const NewMessageScreen = () => {
     return () => unsubscribe();
   }, [userId]);
 
-  // Lọc danh sách người dùng theo từ khóa tìm kiếm
   const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Gửi tin nhắn khi chọn một người dùng
   const startChat = async (user) => {
     if (!userId || !fullName) {
       console.error("User data not loaded yet");

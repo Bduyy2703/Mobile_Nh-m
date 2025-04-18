@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { addDoc, collection, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
+import moment from 'moment';
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
   FlatList,
   Image,
   StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { collection, addDoc, orderBy, query, onSnapshot, where, updateDoc, doc } from 'firebase/firestore';
 import { database } from '../../config/firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import moment from 'moment'; // Thêm moment để định dạng thời gian
 
 const ChatDetailScreen = () => {
   const [messages, setMessages] = useState([]);
@@ -28,7 +28,6 @@ const ChatDetailScreen = () => {
   const navigation = useNavigation();
   const { contact } = route.params;
 
-  // Lấy thông tin userId và receiverId
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -45,20 +44,17 @@ const ChatDetailScreen = () => {
     fetchUserData();
   }, [contact]);
 
-  // Lấy dữ liệu tin nhắn từ Firebase
   useEffect(() => {
     if (!userId || !receiverId) return;
 
     let q;
     if (isGroup) {
-      // Nếu là nhóm chat, lấy tin nhắn dựa trên receiver (ID của nhóm)
       q = query(
         collection(database, 'chats'),
         where('receiver', '==', receiverId),
         orderBy('createdAt', 'asc')
       );
     } else {
-      // Nếu là trò chuyện cá nhân, lấy tin nhắn dựa trên sender và receiver
       q = query(
         collection(database, 'chats'),
         where('sender', 'in', [userId, receiverId]),
@@ -71,7 +67,7 @@ const ChatDetailScreen = () => {
       const messagesData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: doc.id, // Sử dụng ID của document để cập nhật trạng thái đọc
+          id: doc.id, 
           text: data.text,
           time: moment(data.createdAt.toDate()).calendar(),
           isSender: data.sender === userId,
@@ -83,7 +79,6 @@ const ChatDetailScreen = () => {
 
       setMessages(messagesData);
 
-      // Đánh dấu các tin nhắn chưa đọc là đã đọc
       const unreadMessages = querySnapshot.docs.filter(doc => {
         const data = doc.data();
         return !data.read && data.sender !== userId;
@@ -103,7 +98,6 @@ const ChatDetailScreen = () => {
     return () => unsubscribe();
   }, [userId, receiverId, isGroup]);
 
-  // Gửi tin nhắn
   const sendMessage = async () => {
     if (!inputText.trim()) return;
 
@@ -130,7 +124,6 @@ const ChatDetailScreen = () => {
     }
   };
 
-  // Render từng tin nhắn
   const renderMessage = ({ item }) => (
     <View
       style={[

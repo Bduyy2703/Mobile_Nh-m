@@ -1,23 +1,23 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from "@react-navigation/native";
+import { collection, doc, getDoc, onSnapshot, orderBy, query } from "firebase/firestore";
+import moment from 'moment';
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
   FlatList,
   Image,
   StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Header from "../Header/header";
-import { commonStyles } from "../../style";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
-import { collection, query, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
 import { database } from "../../config/firebase";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import moment from 'moment';
+import { commonStyles } from "../../style";
+import Header from "../Header/header";
 
 const MessageScreen = () => {
   const navigation = useNavigation();
@@ -95,7 +95,6 @@ const MessageScreen = () => {
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Kiểm tra nếu là nhóm chat
           if (data.isGroup) {
             if (data.receiver && !messagesData[data.receiver]) {
               groupPromises.push(getGroupById(data.receiver).then(groupInfo => {
@@ -114,7 +113,6 @@ const MessageScreen = () => {
               }));
             }
           } else {
-            // Trò chuyện cá nhân
             if ((data.sender === userId || data.receiver === userId)) {
               const key = data.sender === userId ? data.receiver : data.sender;
               userPromises.push(getUserById(key).then(userInfo => {

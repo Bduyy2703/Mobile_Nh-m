@@ -17,7 +17,6 @@ const ProfileChat = () => {
   const { contact } = route.params;
   const [userId, setUserId] = useState(null);
 
-  // Lấy userId từ AsyncStorage
   React.useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -30,7 +29,6 @@ const ProfileChat = () => {
     fetchUserData();
   }, []);
 
-  // Chặn người dùng
   const handleBlock = async () => {
     if (!userId) return;
     Alert.alert(
@@ -60,7 +58,6 @@ const ProfileChat = () => {
     );
   };
 
-  // Báo cáo người dùng
   const handleReport = async () => {
     if (!userId) return;
     Alert.alert(
@@ -90,7 +87,6 @@ const ProfileChat = () => {
     );
   };
 
-  // Xóa cuộc trò chuyện
   const handleDelete = async () => {
     if (!userId) return;
     Alert.alert(

@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  TextInput,
-} from "react-native";
-import Header from "../Header/header";
-import { commonStyles } from "../../style";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { collection, query, onSnapshot, addDoc } from "firebase/firestore";
-import { database } from "../../config/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import { addDoc, collection, onSnapshot, query } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { database } from "../../config/firebase";
+import { commonStyles } from "../../style";
+import Header from "../Header/header";
 
 const CreateGroupScreen = () => {
   const navigation = useNavigation();
@@ -24,7 +24,6 @@ const CreateGroupScreen = () => {
   const [userId, setUserId] = useState(null);
   const [fullName, setFullName] = useState(null);
 
-  // Lấy userId và fullName từ AsyncStorage
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -39,7 +38,6 @@ const CreateGroupScreen = () => {
     fetchUserData();
   }, []);
 
-  // Lấy danh sách người dùng từ Firestore
   useEffect(() => {
     const q = query(collection(database, "users"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -77,7 +75,6 @@ const CreateGroupScreen = () => {
     }
 
     try {
-      // Tạo nhóm mới trong Firestore
       const groupData = {
         name: `Group with ${selectedFriends.length + 1} members`,
         members: [userId, ...selectedFriends],
@@ -85,7 +82,6 @@ const CreateGroupScreen = () => {
       };
       const groupRef = await addDoc(collection(database, "groups"), groupData);
 
-      // Gửi tin nhắn chào mừng
       const welcomeMessage = {
         text: `${fullName} created this group.`,
         createdAt: new Date(),
@@ -102,12 +98,11 @@ const CreateGroupScreen = () => {
       };
       await addDoc(collection(database, "chats"), welcomeMessage);
 
-      // Điều hướng đến màn hình chat của nhóm
       navigation.navigate("screen/chat", {
         contact: {
           id: groupRef.id,
           name: groupData.name,
-          avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg", // Có thể thêm avatar nhóm
+          avatar: "https://esx.bigo.sg/eu_live/2u6/2ZuCJH.jpg", 
           isGroup: true,
         },
       });

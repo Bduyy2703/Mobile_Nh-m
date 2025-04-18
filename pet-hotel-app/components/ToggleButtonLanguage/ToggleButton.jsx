@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import i18n from '../../i18n';
 
 const ToggleFlag = () => {
-  const [isVnFlag, setIsVnFlag] = useState(i18n.language === 'vi'); // Khởi tạo dựa trên ngôn ngữ hiện tại
+  const [isVnFlag, setIsVnFlag] = useState(i18n.language === 'vi');
 
   const toggleSwitch = () => {
-    const newLang = isVnFlag ? 'en' : 'vi'; // Dựa trên trạng thái cờ để đổi ngôn ngữ
+    const newLang = isVnFlag ? 'en' : 'vi'; 
     i18n.changeLanguage(newLang);
     setIsVnFlag(!isVnFlag);
   };
 
   useEffect(() => {
-    // Đồng bộ trạng thái cờ với ngôn ngữ hiện tại
     setIsVnFlag(i18n.language === 'vi');
   }, [i18n.language]);
 

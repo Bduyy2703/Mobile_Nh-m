@@ -24,7 +24,6 @@ export default function PaymentFieldTable({ data }) {
   let webhookData = null;
   if (data) {
     webhookData = data;
-    // Filter out empty fields or undefined
     webhookData = Object.fromEntries(
       Object.entries(webhookData).filter(([k, v]) => {
         if (v === "" || v === undefined || k === "items") return false;

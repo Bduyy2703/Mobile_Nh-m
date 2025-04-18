@@ -1,27 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Clipboard, TouchableOpacity } from 'react-native';
-import Modal from 'react-native-modal'; // Thêm Modal
-import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
-import QRCode from 'react-native-qrcode-svg';
-import TransferInfoField from './TransferInfoField';
-import API from '../../config/AXIOS_API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Clipboard, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
+import QRCode from 'react-native-qrcode-svg';
+import API from '../../config/AXIOS_API';
+import TransferInfoField from './TransferInfoField';
 
 const TransferInfo = ({
   accountName,
   accountNumber,
   amount,
-  bin,
   description,
   qrCode,
   orderCode,
-  paymentLinkId,
   type,
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [isModalVisible, setModalVisible] = useState(false); // Trạng thái cho modal
+  const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     let intervalId;

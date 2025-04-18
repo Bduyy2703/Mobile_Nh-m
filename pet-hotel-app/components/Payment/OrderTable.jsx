@@ -1,4 +1,4 @@
-import { View, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { DataTable } from "react-native-paper";
 
 export default function OrderTable({ data }) {

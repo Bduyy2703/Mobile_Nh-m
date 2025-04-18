@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StatusBar, Image, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { commonStyles } from '../../style';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { PasswordInput } from '../PasswordInput/passwordInput';
-import googleIcon from '../../assets/images/icons8-google-48.png';
-import facebookIcon from '../../assets/images/icons8-facebook-48.png';
-import { useTranslation } from 'react-i18next';
-import i18n from '../../i18n';
-import ToggleFlag from '../ToggleButtonLanguage/ToggleButton';
-import BASE from '../../config/AXIOS_BASE';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from "jwt-decode";
-import { doc, setDoc } from 'firebase/firestore'; 
-import { database } from '../../config/firebase';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { doc, setDoc } from 'firebase/firestore';
+import { jwtDecode } from "jwt-decode";
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Alert, Image, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import googleIcon from '../../assets/images/icons8-google-48.png';
+import BASE from '../../config/AXIOS_BASE';
+import { database } from '../../config/firebase';
+import { commonStyles } from '../../style';
+import { PasswordInput } from '../PasswordInput/passwordInput';
+import ToggleFlag from '../ToggleButtonLanguage/ToggleButton';
 const LoginScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -25,10 +23,6 @@ const LoginScreen = () => {
   const handlePasswordChange = (value) => {
     setPassword(value);
   };
-
-  const handleForgot = () => {
-    // router.push('/screen/forgotPassword'); 
-  }
 
   const handleLogin = async () => {
     const loginPayload = {
@@ -45,13 +39,11 @@ const LoginScreen = () => {
         const userId = decodedToken.userId;
         const isPremium = decodedToken.isPremium;
   
-        // Lưu dữ liệu vào AsyncStorage
         await AsyncStorage.setItem('token', token);
         await AsyncStorage.setItem('userId', userId);
         await AsyncStorage.setItem('fullName', fullName);
         await AsyncStorage.setItem('isPremium', JSON.stringify(isPremium));
   
-        // Ghi dữ liệu vào Firestore, nhưng không để lỗi Firestore ảnh hưởng đến chuyển hướng
         try {
           const userDocRef = doc(database, 'users', userId);
           await setDoc(userDocRef, {
@@ -61,10 +53,8 @@ const LoginScreen = () => {
           });
         } catch (firestoreError) {
           console.error('Lỗi ghi dữ liệu Firestore:', firestoreError);
-          // Có thể thông báo lỗi, nhưng không dừng chuyển hướng
         }
   
-        // Chuyển hướng sang /home bất kể Firestore thành công hay thất bại
         console.log('Chuyển hướng sang /home');
         router.push('/home');
       }
@@ -74,14 +64,6 @@ const LoginScreen = () => {
       Alert.alert('Đăng nhập thất bại', 'Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
     }
   };
-
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-
-
 
   return (
     <SafeAreaView style={commonStyles.containerContent}>
@@ -125,10 +107,6 @@ const LoginScreen = () => {
         <TouchableOpacity style={commonStyles.googleButton} onPress={() => { }}>
           <Image source={googleIcon} style={{ width: 50, height: 50 }} />
         </TouchableOpacity>
-
-        {/* <TouchableOpacity style={commonStyles.facebookButton} onPress={() => {}}>
-          <Image source={facebookIcon} style={{ width: 50, height: 50 }} />
-        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );

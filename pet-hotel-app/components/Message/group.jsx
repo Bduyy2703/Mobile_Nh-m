@@ -138,7 +138,7 @@ const CreateGroupScreen = () => {
   const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
   );
-
+   
   return (
     <SafeAreaView style={commonStyles.container}>
       <Header title="New Group" />

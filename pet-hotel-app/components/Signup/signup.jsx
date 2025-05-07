@@ -48,7 +48,6 @@ const SignUpScreen = () => {
       password: password,
       confirmPassword: confirmPassword,
     };
-
     try {
       const response = await BASE.post("/register", registerPayload);
       if (response.status === 201) {
@@ -62,14 +61,12 @@ const SignUpScreen = () => {
       Alert.alert("Signup Failed", errorMessage);
     }
   };
-
   const handlePasswordChange = (value) => {
     setPassword(value);
   };
   const handleConfirmPasswordChange = (value) => {
     setConfirmPassword(value);
   };
-
   return (
     <ScrollView style={commonStyles.containerContent}>
       <View style={{ width: '100%', alignItems: 'center' }}>
@@ -80,7 +77,6 @@ const SignUpScreen = () => {
         />
       </View>
       <Text style={commonStyles.titleText}>{t('welcome')}</Text>
-
       <TextInput
         style={commonStyles.input}
         placeholder="Username"

@@ -123,5 +123,5 @@ const SignUpScreen = () => {
     </ScrollView>
   );
 };
-
+ 
 export default SignUpScreen;

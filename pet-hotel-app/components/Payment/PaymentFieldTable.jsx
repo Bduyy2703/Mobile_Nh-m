@@ -31,7 +31,6 @@ export default function PaymentFieldTable({ data }) {
       })
     );
   }
-
   return (
     <View>
       <DataTable style={styles.table}>
